@@ -1,0 +1,94 @@
+# Process this file with autoconf to produce a configure script.
+#
+# Configure.in for RPostgreSQL
+# Copyright (C) 2008 Dirk Eddelbuettel and licensed under GNU GPL
+#
+# This file draws heavily on configure.in files from littler, RMySQL, and RdbiPgSQL
+
+# Set the name and version -- the version set here will propagate to other files from here
+AC_INIT(RPostgreSQL, 0.1)
+
+# Checks for common programs using default macros
+AC_PROG_CC
+
+# Check for non-standard programs: pg_configg(1) to configure PostgreSQL builds
+AC_PATH_PROG([PG_CONFIG], [pg_config])
+
+# If pg_config was found, let's use it
+if test "${PG_CONFIG}" != ""; then
+
+    # Use pg_config for header and linker arguments
+    PG_INCDIR=`${PG_CONFIG} --includedir`
+    PG_LIBDIR=`${PG_CONFIG} --libdir`
+
+else 
+
+    # let's look around -- code copied from RdbuiPgSQL but modified to use test -f
+    AC_MSG_NOTICE([checking for PostgreSQL header files])
+    if ! test $PG_INCDIR
+    then
+	for dir in \
+	/usr/include \
+	/usr/include/pgsql \
+	/usr/include/postgresql \
+	/usr/local/include \
+	/usr/local/include/pgsql \
+	/usr/local/include/postgresql \
+	/usr/local/pgsql/include \
+	/usr/local/postgresql/include \
+	/opt/include \
+	/opt/include/pgsql \
+	/opt/include/postgresql
+	do
+
+	    if test -f ${dir}/libpq-fe.h
+	    then 
+	    	PG_INCDIR=${dir}
+		break
+	    fi
+	done
+    fi
+
+    # likewise, let's look around for libpq.so
+    if ! test $PG_LIBDIR
+    then
+	for dir in \
+	/usr/lib \
+	/usr/lib/pgsql \
+	/usr/lib/postgresql \
+	/usr/local/lib \
+	/usr/local/lib/pgsql \
+	/usr/local/lib/postgresql \
+	/usr/local/pgsql/lib \
+	/usr/local/postgresql/lib \
+	/opt/lib \
+	/opt/lib/pgsql \
+	/opt/lib/postgresql
+	do
+	    if test -f ${dir}/libpq.so
+	    then 
+	    	PG_LIBDIR=${dir}
+		break
+	    fi
+	done
+    fi
+fi
+
+# Expand into arguments
+PKG_CPPFLAGS="-I${PG_INCDIR}"
+PKG_LIBS="-L${PG_LIBDIR} -lpq"
+
+# Test for sanity by looking for libpq-fe.h, no explicit action on found, error on failure
+AC_CHECK_FILE(["${PG_INCDIR}/libpq-fe.h"],
+	,
+	AC_MSG_ERROR([File libpq-fe.h not in ${PG_INCDIR}; installation may be broken.]))
+
+# Test for sanity by looking for libpq.so, no explicit action on found, error on failure
+AC_CHECK_FILE(["${PG_LIBDIR}/libpq.so"],
+	,
+	AC_MSG_ERROR([Library libpq.so not in ${PG_LIBDIR}; installation may be broken.]))
+
+# Now substitute these two variable in src/Makevars.in to create src/Makevars
+AC_SUBST(PKG_CPPFLAGS)
+AC_SUBST(PKG_LIBS)
+AC_OUTPUT(src/Makevars)
