@@ -1,5 +1,5 @@
 ## Class: dbObjectId
-## Last Modified: $Date#
+## Last Modified: $Date: 2009-05-19 17:18:49 -0500 (Tue, 19 May 2009) $
 
 ## This package was developed as a part of Summer of Code program organized by Google.
 ## Thanks to David A. James & Saikat DebRoy, the authors of RMySQL package.

@@ -1,6 +1,6 @@
 
 ## PostgreSQLSupport.R
-## Last Modified: $Date: 2008-10-08 19:49:52 -0500 (Wed, 08 Oct 2008) $
+## Last Modified: $Date: 2009-10-09 19:51:35 -0500 (Fri, 09 Oct 2009) $
 
 ## This package was developed as a part of Summer of Code program organized by Google.
 ## Thanks to David A. James & Saikat DebRoy, the authors of RMySQL package.
@@ -79,8 +79,20 @@ postgresqlDriverInfo <- function(obj, what="", ...) {
 postgresqlNewConnection <- function(drv, user="", password="",
                                     host="",dbname = "",
                                     port = "", tty ="",options="" ) {
-    if(!isIdCurrent(drv))
+    if (!isIdCurrent(drv))
         stop("expired manager")
+    if (is.null(user))
+        stop("user argument cannot be NULL")
+    if (is.null(password))
+        stop("password argument cannot be NULL")
+    if (is.null(host))
+        stop("host argument cannot be NULL")
+    if (is.null(dbname))
+        stop("dbname argument cannot be NULL")
+    if (is.null(port))
+        stop("port argument cannot be NULL")
+    if (is.null(tty))
+        stop("tty argument cannot be NULL")
     con.params <- as.character(c(user, password, host,
                                  dbname, port,
                                  tty,options))
@@ -191,11 +203,21 @@ postgresqlQuickSQL <- function(con, statement) {
     if(!isIdCurrent(con))
         stop(paste("expired", class(con)))
     nr <- length(dbListResults(con))
-    if(nr>0){                       ## are there resultSets pending on con?
+    if (nr > 0) {                   ## are there resultSets pending on con?
         new.con <- dbConnect(con)   ## yep, create a clone connection
         on.exit(dbDisconnect(new.con))
-        rs <- dbSendQuery(new.con, statement)
-    } else rs <- dbSendQuery(con, statement)
+        rs <- try(dbSendQuery(new.con, statement))
+        if (inherits(rs, ErrorClass)){
+            warning("Could not create execute", statement)
+            return(NULL)
+        }
+    } else {
+        rs <- try(dbSendQuery(con, statement))
+        if (inherits(rs, ErrorClass)){
+            warning("Could not create execute", statement)
+            return(NULL)
+        }
+    }
     if(dbHasCompleted(rs)){
         dbClearResult(rs)            ## no records to fetch, we're done
         invisible()
