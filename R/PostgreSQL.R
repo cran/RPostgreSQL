@@ -1,6 +1,6 @@
 
 ## PostgreSQL.R
-## Last Modified: $Date: 2009-10-09 19:46:41 -0500 (Fri, 09 Oct 2009) $
+## Last Modified: $Date: 2009-10-16 12:50:09 -0500 (Fri, 16 Oct 2009) $
 
 ## This package was developed as a part of Summer of Code program organized by Google.
 ## Thanks to David A. James & Saikat DebRoy, the authors of RMySQL package.
@@ -138,8 +138,8 @@ setMethod("summary", "PostgreSQLConnection",
 setMethod("dbListTables", "PostgreSQLConnection",
           def = function(conn, ...){
               out <- dbGetQuery(conn,
-                                "select tablename from pg_tables where schemaname !='information_schema' ",
-                                "and schemaname !='pg_catalog'", ...)
+                                paste("select tablename from pg_tables where schemaname !='information_schema'",
+                                      "and schemaname !='pg_catalog'", ...))
               if (is.null(out) || nrow(out) == 0)
                   out <- character(0)
               else
