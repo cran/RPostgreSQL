@@ -1,22 +1,18 @@
 
-## selectWithAlias test
-##
-## test for the 'Issue 1' on the Google Code issue log
-## this was reported in June and fixed by Joe Conway (svr committ r100)
+## dbWriteTable test
 ##
 ## Assumes that
 ##  a) PostgreSQL is running, and
 ##  b) the current user can connect
 ## both of which are not viable for release but suitable while we test
 ##
-## Dirk Eddelbuettel, 03 Oct 2009
+## Dirk Eddelbuettel, 10 Sep 2009
 
 ## only run this if this env.var is set correctly
 if (Sys.getenv("POSTGRES_USER") != "" & Sys.getenv("POSTGRES_HOST") != "" & Sys.getenv("POSTGRES_DATABASE") != "") {
 
     ## try to load our module and abort if this fails
     stopifnot(require(RPostgreSQL))
-    stopifnot(require(datasets))
 
     ## load the PostgresSQL driver
     drv <- dbDriver("PostgreSQL")
@@ -29,23 +25,22 @@ if (Sys.getenv("POSTGRES_USER") != "" & Sys.getenv("POSTGRES_HOST") != "" & Sys.
                      dbname=Sys.getenv("POSTGRES_DATABASE"),
                      port=ifelse((p<-Sys.getenv("POSTGRES_PORT"))!="", p, 5432))
 
-    if (dbExistsTable(con, "rockdata")) {
-        print("Removing rockdata\n")
-        dbRemoveTable(con, "rockdata")
-    }
 
-    dbWriteTable(con, "rockdata", rock)
+    #  create a table
+    res <- dbSendQuery(con, "CREATE TABLE aa (pk integer primary key, v1 float not null, v2 float)" )
 
     ## run a simple query and show the query result
-    res <- dbGetQuery(con, "select area as ar, peri as pe, shape as sh, perm as pr from rockdata limit 10")
-    print(res)
+    res <- dbSendQuery(con, "INSERT INTO aa VALUES(3, 2, NULL)" )
+    res <- dbSendQuery(con, "select pk, v1, v2, v1+v2 from aa")
+    cat("dbColumnInfo\n")
+    print(dbColumnInfo(res))
+    cat("SELECT result\n")
+    df <- fetch(res, n=-1)
+    print(df)
 
     ## cleanup
-    if (dbExistsTable(con, "rockdata")) {
-        print("Removing rockdata\n")
-        dbRemoveTable(con, "rockdata")
-    }
-
+    cat("Removing \"AA\"\n")
+    dbRemoveTable(con, "aa")
     ## and disconnect
     dbDisconnect(con)
 }

@@ -1,6 +1,6 @@
 
 ## PostgreSQLSupport.R
-## Last Modified: $Date: 2009-10-09 19:51:35 -0500 (Fri, 09 Oct 2009) $
+## Last Modified: $Date: 2010-10-12 22:07:19 -0500 (Tue, 12 Oct 2010) $
 
 ## This package was developed as a part of Summer of Code program organized by Google.
 ## Thanks to David A. James & Saikat DebRoy, the authors of RMySQL package.
@@ -197,6 +197,21 @@ postgresqlExecStatement <- function(con, statement) {
     new("PostgreSQLResult", Id = rsId)
 }
 
+postgresqlEscapeStrings <- function(con, preescapedstring) {
+    conId <- as(con, "integer")
+    preescapedstring <- as(preescapedstring, "character")
+    escapedstring <- .Call("RS_PostgreSQL_escape", conId, preescapedstring, PACKAGE = .PostgreSQLPkgName)
+    return(escapedstring)
+}
+
+postgresqlCopyIn <- function(con, filename) {
+    if(!isIdCurrent(con))
+        stop(paste("expired", class(con)))
+    conId <- as(con, "integer")
+    statement <- as(filename, "character")
+    .Call("RS_PostgreSQL_CopyIn", conId, filename, PACKAGE = .PostgreSQLPkgName)
+}
+
 ## helper function: it exec's *and* retrieves a statement. It should
 ## be named somehting else.
 postgresqlQuickSQL <- function(con, statement) {
@@ -391,7 +406,8 @@ postgresqlFetch <- function(res, n=0, ...) {
         } else if(flds[[i]] == 1184)  {  ## 1184 corresponds to Timestamp with TimeZone
             ## TODO: Details about time zone has been dropped.
             ## Will try do improve it in the future
-            rel[,i] <- as.POSIXct(rel[,i],"%Y-%m-%d %H:%M:%S")
+            #rel[,i] <- as.POSIXct(rel[,i],"%Y-%m-%d %H:%M:%S")  # second arg. is tz, so this was wrong
+            rel[,i] <- as.POSIXct(rel[,i])
         }
     }
 
@@ -439,7 +455,7 @@ postgresqlCloseResult <- function(res, ...) {
 
 ## Use NULL, "", or 0 as row.names to prevent using any field as row.names.
 postgresqlReadTable <- function(con, name, row.names = "row_names", check.names = TRUE, ...) {
-    out <- dbGetQuery(con, paste("SELECT * from", name))
+    out <- dbGetQuery(con, paste("SELECT * from", postgresqlQuoteId(name)))
     if(check.names)
         names(out) <- make.names(names(out), unique = TRUE)
     ## should we set the row.names of the output data.frame?
@@ -609,8 +625,8 @@ postgresqlWriteTable <- function(con, name, value, field.types, row.names = TRUE
     }
     if(!dbExistsTable(con,name)){      ## need to re-test table for existance
         ## need to create a new (empty) table
-        sql1 <- paste("create table ", name, "\n(\n\t", sep="")
-        sql2 <- paste(paste(names(field.types), field.types), collapse=",\n\t",
+        sql1 <- paste("create table ", postgresqlQuoteId(name), "\n(\n\t", sep="")
+        sql2 <- paste(paste(postgresqlQuoteId(names(field.types)), field.types), collapse=",\n\t",
                       sep="")
         sql3 <- "\n)\n"
         sql <- paste(sql1, sql2, sql3, sep="")
@@ -630,7 +646,7 @@ postgresqlWriteTable <- function(con, name, value, field.types, row.names = TRUE
     ## in the R per-session temporary directory) is outside of Postgresql's directory
     ## So if you use SELinux, you may have to manually insert data or temporarily turn
     ## SELinux off to use this function
-    if(as.character(Sys.info()["sysname"])=="Linux")
+    if(as.character(Sys.info()["sysname"]) %in% c("Linux", "Darwin"))
         fn <- tempfile("rsdbi","/tmp")
     else
         fn <- tempfile("rsdbi")
@@ -638,10 +654,10 @@ postgresqlWriteTable <- function(con, name, value, field.types, row.names = TRUE
     safe.write(value, file = fn)
     on.exit(unlink(fn), add = TRUE)
 
-    sql4 <- paste("COPY ",name," FROM '",fn,"' ",sep="")
+    sql4 <- paste("COPY", postgresqlQuoteId(name), "FROM STDIN")
 
     rs <- try(dbSendQuery(new.con, sql4))
-
+    postgresqlCopyIn(new.con, fn)
 
     if (inherits(rs, ErrorClass)) {
         warning("could not load data into table")
@@ -668,12 +684,10 @@ dbBuildTableDefinition <- function(dbObj, name, obj, field.types = NULL, row.nam
     i <- match("row.names", names(field.types), nomatch=0)
     if(i>0) ## did we add a row.names value?  If so, it's a text field.
         field.types[i] <- dbDataType(dbObj, field.types$row.names)
-    names(field.types) <-
-        make.db.names(dbObj, names(field.types), allow.keywords = FALSE)
 
     ## need to create a new (empty) table
-    flds <- paste(names(field.types), field.types)
-    paste("CREATE TABLE", name, "\n(", paste(flds, collapse=",\n\t"), "\n)")
+    flds <- paste(postgresqlQuoteId(names(field.types)), field.types)
+    paste("CREATE TABLE", postgresqlQuoteId(name), "\n(", paste(flds, collapse=",\n\t"), "\n)")
 }
 
 ## the following is almost exactly from the ROracle driver
@@ -733,6 +747,11 @@ postgresqlDataType <- function(obj, ...) {
                            "text")
     }
     sql.type
+}
+
+postgresqlQuoteId <- function(identifier){
+    ret <- paste('"', gsub('"','""',identifier), '"', sep="")
+    ret
 }
 
 ## the following reserved words were taken from ["RESERVED" of postgres colomn in ] Table C.1 in Appendix C

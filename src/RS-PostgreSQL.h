@@ -4,7 +4,7 @@
 /*
  *    RS-PostgreSQL.h
  *
- * Last Modified: $Date: 2009-05-19 17:18:49 -0500 (Tue, 19 May 2009) $
+ * Last Modified: $Date: 2010-10-13 12:31:28 -0500 (Wed, 13 Oct 2010) $
  *
  * This package was developed as a part of Summer of Code program organized by Google.
  * Thanks to David A. James & Saikat DebRoy, the authors of RMySQL package.
@@ -69,6 +69,8 @@ extern "C" {
     Res_Handle *RS_PostgreSQL_exec(Con_Handle * conHandle, s_object * statement);
     s_object *RS_PostgreSQL_fetch(Res_Handle * rsHandle, s_object * max_rec);
     s_object *RS_PostgreSQL_closeResultSet(Res_Handle * rsHandle);
+
+    s_object *RS_PostgreSQL_copyin(Con_Handle * conHandle, s_object * filename);
 
     s_object *RS_PostgreSQL_validHandle(Db_Handle * handle);    /* boolean */
 
@@ -157,39 +159,6 @@ extern "C" {
 #    define ANYELEMENTOID		2283
 #    define ANYNONARRAYOID		2776
 #    define ANYENUMOID		3500
-
-
-    static struct data_types RS_PostgreSQL_dataTypes[] = {
-
-        {"BIGINT", 20},         /* ALSO KNOWN AS INT8 */
-        {"DECIMAL", 1700},      /* ALSO KNOWN  AS NUMERIC */
-        {"FLOAT8", 701},        /* DOUBLE PRECISION */
-        {"FLOAT", 700},         /* ALSO CALLED FLOAT4 (SINGLE PRECISION) */
-        {"INTEGER", 23},        /*ALSO KNOWN AS INT 4 */
-        {"SMALLINT", 21},       /* ALSO KNOWN AS INT2 */
-        {"MONEY", 790},         /* MONEY (8 bytes) */
-
-        {"CHAR", 1042},         /* FIXED LENGTH STRING-BLANK PADDED */
-        {"VARCHAR", 1043},      /* VARIABLE LENGTH STRING WITH SPECIFIED LIMIT */
-        {"TEXT", 25},           /* VARIABLE LENGTH STRING */
-
-        {"DATE", 1082},
-        {"TIME", 1083},
-        {"TIMESTAMP", 1114},
-        {"TIMESTAMPTZOID", 1184},
-        {"INTERVAL", 1186},
-        {"TIMETZOID", 1266},
-
-        {"BOOL", 16},           /* BOOLEAN */
-
-        {"BYTEA", 17},          /* USED FOR STORING RAW DATA */
-
-        {"OID", 26},
-
-        {"NULL", 2278},
-
-        {(char *) 0, -1}
-    };
 
     s_object *RS_PostgreSQL_typeNames(s_object * typeIds);
     extern const struct data_types RS_dataTypeTable[];

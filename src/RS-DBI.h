@@ -4,7 +4,7 @@
 /*
  *    RS-DBI.h
  *
- * Last Modified: $Date: 2009-05-19 17:18:49 -0500 (Tue, 19 May 2009) $
+ * Last Modified: $Date: 2010-10-12 09:27:11 -0500 (Tue, 12 Oct 2010) $
  *
  * This package was developed as a part of Summer of Code program organized by Google.
  * Thanks to David A. James & Saikat DebRoy, the authors of RMySQL package.
@@ -28,18 +28,16 @@ extern "C" {
 
 #include "S4R.h"
 
-/* Microsoft Visual C++ uses int _getpid()  */
-#ifdef MSVC
+#ifdef WIN32
 #include <process.h>
-#define getpid _getpid
-#define pid_t int
 #else
 #include <unistd.h>
 #endif
 
 #include<ctype.h>               /* NOTE:added this header because of using isalpha in RS-DBI.c -sameer */
 
-    pid_t getpid();
+//    pid_t getpid();
+
 
     /* We now define 4 important data structures:
      * RS_DBI_manager, RS_DBI_connection, RS_DBI_resultSet, and

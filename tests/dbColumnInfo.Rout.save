@@ -1,7 +1,8 @@
 
-R version 2.11.1 (2010-05-31)
+R version 2.12.0 RC (2010-10-07 r53227)
 Copyright (C) 2010 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
+Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -30,7 +31,6 @@ Type 'q()' to quit R.
 + 
 +     ## try to load our module and abort if this fails
 +     stopifnot(require(RPostgreSQL))
-+     stopifnot(require(datasets))
 + 
 +     ## load the PostgresSQL driver
 +     drv <- dbDriver("PostgreSQL")
@@ -44,24 +44,21 @@ Type 'q()' to quit R.
 +                      port=ifelse((p<-Sys.getenv("POSTGRES_PORT"))!="", p, 5432))
 + 
 + 
-+     if (dbExistsTable(con, "rockdata")) {
-+         print("Removing rockdata\n")
-+         dbRemoveTable(con, "rockdata")
-+     }
-+ 
-+     dbWriteTable(con, "rockdata", rock)
++     #  create a table
++     res <- dbSendQuery(con, "CREATE TABLE aa (pk integer primary key, v1 float not null, v2 float)" )
 + 
 +     ## run a simple query and show the query result
-+     res <- dbGetQuery(con, "select * from rockdata limit 10")
-+     print(res)
-+ 
++     res <- dbSendQuery(con, "INSERT INTO aa VALUES(3, 2, NULL)" )
++     res <- dbSendQuery(con, "select pk, v1, v2, v1+v2 from aa")
++     cat("dbColumnInfo\n")
++     print(dbColumnInfo(res))
++     cat("SELECT result\n")
++     df <- fetch(res, n=-1)
++     print(df)
 + 
 +     ## cleanup
-+     if (dbExistsTable(con, "rockdata")) {
-+         print("Removing rockdata\n")
-+         dbRemoveTable(con, "rockdata")
-+     }
-+ 
++     cat("Removing \"AA\"\n")
++     dbRemoveTable(con, "aa")
 +     ## and disconnect
 +     dbDisconnect(con)
 + }

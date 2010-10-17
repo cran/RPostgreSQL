@@ -1,7 +1,8 @@
 
-R version 2.11.1 (2010-05-31)
+R version 2.12.0 RC (2010-10-07 r53227)
 Copyright (C) 2010 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
+Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -44,25 +45,21 @@ Type 'q()' to quit R.
 +                      port=ifelse((p<-Sys.getenv("POSTGRES_PORT"))!="", p, 5432))
 + 
 + 
-+     if (dbExistsTable(con, "rockdata")) {
-+         print("Removing rockdata\n")
-+         dbRemoveTable(con, "rockdata")
-+     }
 + 
-+     dbWriteTable(con, "rockdata", rock)
++     a <- dbSendQuery(con, "CREATE TABLE foo (name text)")
++     b <- dbSendQuery(con, "INSERT INTO foo VALUES ('bar')")
 + 
 +     ## run a simple query and show the query result
-+     res <- dbGetQuery(con, "select * from rockdata limit 10")
++     x <- dbSendQuery(con, "CREATE TEMPORARY TABLE xyz ON COMMIT DROP AS select * from foo limit 1; select * from xyz;")
++     res <- fetch(x, n=-1)
 +     print(res)
++     a <- dbSendQuery(con, "DROP TABLE foo")
 + 
 + 
 +     ## cleanup
-+     if (dbExistsTable(con, "rockdata")) {
-+         print("Removing rockdata\n")
-+         dbRemoveTable(con, "rockdata")
-+     }
 + 
 +     ## and disconnect
 +     dbDisconnect(con)
++     cat("PASS -- ended without segmentation fault\n")
 + }
 > 

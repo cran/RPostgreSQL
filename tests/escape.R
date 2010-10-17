@@ -1,8 +1,8 @@
 
-## selectWithAlias test
+## connectWithNull test
 ##
-## test for the 'Issue 1' on the Google Code issue log
-## this was reported in June and fixed by Joe Conway (svr committ r100)
+## test for the 'Issue 2' on the Google Code issue log
+## reported in April 2009, still open ?
 ##
 ## Assumes that
 ##  a) PostgreSQL is running, and
@@ -21,30 +21,19 @@ if (Sys.getenv("POSTGRES_USER") != "" & Sys.getenv("POSTGRES_HOST") != "" & Sys.
     ## load the PostgresSQL driver
     drv <- dbDriver("PostgreSQL")
 
-    ## connect to the default db
+    ## connect to the default db -- replacing any of these with NULL will lead to
+    ## a stop() call and a return to the R prompt rather than a segfault
     con <- dbConnect(drv,
                      user=Sys.getenv("POSTGRES_USER"),
                      password=Sys.getenv("POSTGRES_PASSWD"),
                      host=Sys.getenv("POSTGRES_HOST"),
                      dbname=Sys.getenv("POSTGRES_DATABASE"),
                      port=ifelse((p<-Sys.getenv("POSTGRES_PORT"))!="", p, 5432))
-
-    if (dbExistsTable(con, "rockdata")) {
-        print("Removing rockdata\n")
-        dbRemoveTable(con, "rockdata")
-    }
-
-    dbWriteTable(con, "rockdata", rock)
-
-    ## run a simple query and show the query result
-    res <- dbGetQuery(con, "select area as ar, peri as pe, shape as sh, perm as pr from rockdata limit 10")
-    print(res)
-
-    ## cleanup
-    if (dbExistsTable(con, "rockdata")) {
-        print("Removing rockdata\n")
-        dbRemoveTable(con, "rockdata")
-    }
+    
+    st <- (postgresqlEscapeStrings(con,"aaa"))
+    print(st)
+    st2 <- (postgresqlEscapeStrings(con,"aa'a"))
+    print(st2)
 
     ## and disconnect
     dbDisconnect(con)

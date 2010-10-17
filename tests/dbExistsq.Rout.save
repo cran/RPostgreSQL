@@ -1,7 +1,8 @@
 
-R version 2.11.1 (2010-05-31)
+R version 2.12.0 RC (2010-10-07 r53227)
 Copyright (C) 2010 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
+Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -16,7 +17,9 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 Type 'q()' to quit R.
 
 > 
-> ## dbWriteTable test
+> ## dbExists test with schema name: reported as Issue 3 at
+> ## http://code.google.com/p/rpostgresql/issues/detail?id=3
+> ## and based on an earlier email by Prasenjit Kapat
 > ##
 > ## Assumes that
 > ##  a) PostgreSQL is running, and
@@ -43,23 +46,26 @@ Type 'q()' to quit R.
 +                      dbname=Sys.getenv("POSTGRES_DATABASE"),
 +                      port=ifelse((p<-Sys.getenv("POSTGRES_PORT"))!="", p, 5432))
 + 
-+ 
-+     if (dbExistsTable(con, "rockdata")) {
-+         print("Removing rockdata\n")
-+         dbRemoveTable(con, "rockdata")
++     if (dbExistsTable(con, "rock'data")) {
++         cat("Removing rock'data\n")
++         dbRemoveTable(con, "rock'data")
 +     }
 + 
-+     dbWriteTable(con, "rockdata", rock)
++     cat("Write rock'data\n")
++     dbWriteTable(con, "rock'data", rock)
 + 
-+     ## run a simple query and show the query result
-+     res <- dbGetQuery(con, "select * from rockdata limit 10")
-+     print(res)
++     ## run a simple dbExists
++     cat("Does rock'data exist? ")
++     print(res <- dbExistsTable(con, "rock'data"))
 + 
++     ## this should return TRUE but did not -- does now after patch
++     cat("Does \"public.rock'data\" exist? ")
++     print(res <- dbExistsTable(con, "public.rock'data"))
 + 
 +     ## cleanup
-+     if (dbExistsTable(con, "rockdata")) {
-+         print("Removing rockdata\n")
-+         dbRemoveTable(con, "rockdata")
++     if (dbExistsTable(con, "rock'data")) {
++         cat("Removing rock'data\n")
++         dbRemoveTable(con, "rock'data")
 +     }
 + 
 +     ## and disconnect

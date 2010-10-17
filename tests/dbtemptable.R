@@ -1,15 +1,12 @@
 
-## selectWithAlias test
-##
-## test for the 'Issue 1' on the Google Code issue log
-## this was reported in June and fixed by Joe Conway (svr committ r100)
+## dbWriteTable test
 ##
 ## Assumes that
 ##  a) PostgreSQL is running, and
 ##  b) the current user can connect
 ## both of which are not viable for release but suitable while we test
 ##
-## Dirk Eddelbuettel, 03 Oct 2009
+## Dirk Eddelbuettel, 10 Sep 2009
 
 ## only run this if this env.var is set correctly
 if (Sys.getenv("POSTGRES_USER") != "" & Sys.getenv("POSTGRES_HOST") != "" & Sys.getenv("POSTGRES_DATABASE") != "") {
@@ -29,23 +26,21 @@ if (Sys.getenv("POSTGRES_USER") != "" & Sys.getenv("POSTGRES_HOST") != "" & Sys.
                      dbname=Sys.getenv("POSTGRES_DATABASE"),
                      port=ifelse((p<-Sys.getenv("POSTGRES_PORT"))!="", p, 5432))
 
-    if (dbExistsTable(con, "rockdata")) {
-        print("Removing rockdata\n")
-        dbRemoveTable(con, "rockdata")
-    }
 
-    dbWriteTable(con, "rockdata", rock)
+
+    a <- dbSendQuery(con, "CREATE TABLE foo (name text)")
+    b <- dbSendQuery(con, "INSERT INTO foo VALUES ('bar')")
 
     ## run a simple query and show the query result
-    res <- dbGetQuery(con, "select area as ar, peri as pe, shape as sh, perm as pr from rockdata limit 10")
+    x <- dbSendQuery(con, "CREATE TEMPORARY TABLE xyz ON COMMIT DROP AS select * from foo limit 1; select * from xyz;")
+    res <- fetch(x, n=-1)
     print(res)
+    a <- dbSendQuery(con, "DROP TABLE foo")
+
 
     ## cleanup
-    if (dbExistsTable(con, "rockdata")) {
-        print("Removing rockdata\n")
-        dbRemoveTable(con, "rockdata")
-    }
 
     ## and disconnect
     dbDisconnect(con)
+    cat("PASS -- ended without segmentation fault\n")
 }

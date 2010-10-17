@@ -38,7 +38,7 @@ if (Sys.getenv("POSTGRES_USER") != "" & Sys.getenv("POSTGRES_HOST") != "" & Sys.
     dbWriteTable(con, "tmpirisdata", iris)
 
     ## run a simple query and show the query result
-    res <- dbGetQuery(con, "select * from tmpirisdata where Species=0")
+    res <- dbGetQuery(con, "select * from tmpirisdata where \"Species\"=0")
     print(res)
 
     ## cleanup
@@ -49,4 +49,5 @@ if (Sys.getenv("POSTGRES_USER") != "" & Sys.getenv("POSTGRES_HOST") != "" & Sys.
 
     ## and disconnect
     dbDisconnect(con)
+    cat("PASS:  reached to the end of the test code without segmentation fault\n")
 }

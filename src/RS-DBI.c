@@ -1,7 +1,7 @@
 /*
  *    RS-DBI.c
  *
- * Last Modified: $Date: 2009-05-16 15:03:06 -0500 (Sat, 16 May 2009) $
+ * Last Modified: $Date: 2010-09-11 11:09:54 -0500 (Sat, 11 Sep 2010) $
  *
  * This package was developed as a part of Summer of Code program organized by Google.
  * Thanks to David A. James & Saikat DebRoy, the authors of RMySQL package.
@@ -106,6 +106,7 @@ void
 RS_DBI_freeManager(Mgr_Handle * mgrHandle)
 {
     RS_DBI_manager *mgr;
+    int i;
 
     mgr = RS_DBI_getManager(mgrHandle);
     if (mgr->num_con > 0) {
@@ -121,7 +122,7 @@ RS_DBI_freeManager(Mgr_Handle * mgrHandle)
         mgr->drvName = (char *) NULL;
     }
     if (mgr->connections) {
-        for (int i = 0; i < mgr->num_con; i++) {
+        for (i = 0; i < mgr->num_con; i++) {
             if (mgr->connections[i]) {
                 free(mgr->connections[i]);
             }

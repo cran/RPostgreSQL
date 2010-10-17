@@ -1,7 +1,7 @@
 /*
  *    RS-PostgreSQL.c
  *
- * Last Modified: $Date: 2009-10-13 19:16:35 -0500 (Tue, 13 Oct 2009) $
+ * Last Modified: $Date: 2010-10-13 19:34:04 -0500 (Wed, 13 Oct 2010) $
  *
  * This package was developed as a part of Summer of Code program organized by Google.
  * Thanks to David A. James & Saikat DebRoy, the authors of RMySQL package.
@@ -13,7 +13,42 @@
  *
  */
 
+#include <limits.h>
 #include "RS-PostgreSQL.h"
+
+struct data_types RS_PostgreSQL_dataTypes[] = {
+
+    {"BIGINT", 20},         /* ALSO KNOWN AS INT8 */
+    {"DECIMAL", 1700},      /* ALSO KNOWN  AS NUMERIC */
+    {"FLOAT8", 701},        /* DOUBLE PRECISION */
+    {"FLOAT", 700},         /* ALSO CALLED FLOAT4 (SINGLE PRECISION) */
+    {"INTEGER", 23},        /*ALSO KNOWN AS INT 4 */
+    {"SMALLINT", 21},       /* ALSO KNOWN AS INT2 */
+    {"MONEY", 790},         /* MONEY (8 bytes) */
+    
+    {"CHAR", 1042},         /* FIXED LENGTH STRING-BLANK PADDED */
+    {"VARCHAR", 1043},      /* VARIABLE LENGTH STRING WITH SPECIFIED LIMIT */
+    {"TEXT", 25},           /* VARIABLE LENGTH STRING */
+    
+    {"DATE", 1082},
+    {"TIME", 1083},
+    {"TIMESTAMP", 1114},
+    {"TIMESTAMPTZOID", 1184},
+    {"INTERVAL", 1186},
+    {"TIMETZOID", 1266},
+
+    {"BOOL", 16},           /* BOOLEAN */
+    
+    {"BYTEA", 17},          /* USED FOR STORING RAW DATA */
+    
+    {"OID", 26},
+    
+    {"NULL", 2278},
+
+    {(char *) 0, -1}
+};
+
+
 
 #ifndef USING_R
 #  error("the function RS_DBI_invokeBeginGroup() has not been implemented in S")
@@ -199,32 +234,12 @@ RS_PostgreSQL_newConnection(Mgr_Handle * mgrHandle, s_object * con_params)
     if (!IS_EMPTY(CHR_EL(con_params, 6))) {
         options = (char *) CHR_EL(con_params, 6);
     }
-    if (user == NULL) {
-        user = "";
-    }
-    if (password == NULL) {
-        password = "";
-    }
-    if (host == NULL) {
-        host = "localhost";
-    }
-    if (port == NULL) {
-        port = "";
-    }
-    if (options == NULL) {
-        options = "";
-    }
-    if (tty == NULL) {
-        tty = "";
-    }
-    if (dbname == NULL) {
-        dbname = "template1";
-    }
+
     my_connection = PQsetdbLogin(host, port, options, tty, dbname, user, password);
 
     if (PQstatus(my_connection) != CONNECTION_OK) {
         char buf[1000];
-        sprintf(buf, "could not connect %s@%s on dbname \"%s\"\n", user, host, dbname);
+	sprintf(buf, "could not connect %s@%s on dbname \"%s\"\n", PQuser(my_connection), host?host:"local", PQdb(my_connection));
         RS_DBI_errorMessage(buf, RS_DBI_ERROR);
     }
 
@@ -233,7 +248,14 @@ RS_PostgreSQL_newConnection(Mgr_Handle * mgrHandle, s_object * con_params)
     /* save actual connection parameters */
     conParams->user = RS_DBI_copyString(PQuser(my_connection));
     conParams->password = RS_DBI_copyString(PQpass(my_connection));
-    conParams->host = RS_DBI_copyString(PQhost(my_connection));
+    {
+	const char *tmphost = PQhost(my_connection);
+	if (tmphost) {
+	    conParams->host = RS_DBI_copyString(tmphost);
+	} else {
+	    conParams->host = RS_DBI_copyString("");
+	}
+    }
     conParams->dbname = RS_DBI_copyString(PQdb(my_connection));
     conParams->port = RS_DBI_copyString(PQport(my_connection));
     conParams->tty = RS_DBI_copyString(PQtty(my_connection));
@@ -300,7 +322,7 @@ RS_PostgreSQL_exec(Con_Handle * conHandle, s_object * statement)
     PGconn *my_connection;
     PGresult *my_result;
  
-    Sint res_id, is_select;
+    Sint res_id, is_select=0;
     char *dyn_statement;
 
     con = RS_DBI_getConnection(conHandle);
@@ -329,10 +351,16 @@ RS_PostgreSQL_exec(Con_Handle * conHandle, s_object * statement)
 
     my_result = PQexec(my_connection, dyn_statement);
     if (my_result == NULL) {
-        char errMsg[256];
+        char *errMsg;
+        const char *omsg;
+        size_t len;
+        omsg = PQerrorMessage(my_connection);
+        len = strlen(omsg);
         free(dyn_statement);
-        (void) sprintf(errMsg, "could not run statement: %s", PQerrorMessage(my_connection));
+        errMsg = malloc(len + 80); /* 80 should be larger than the length of "could not ..."*/
+        snprintf(errMsg, len + 80,  "could not run statement: %s", omsg);
         RS_DBI_errorMessage(errMsg, RS_DBI_ERROR);
+        free(errMsg);
     }
 
 
@@ -350,9 +378,15 @@ RS_PostgreSQL_exec(Con_Handle * conHandle, s_object * statement)
     if (strcmp(PQresultErrorMessage(my_result), "") != 0) {
 
         free(dyn_statement);
-        char errResultMsg[256];
-        (void) sprintf(errResultMsg, "could not Retrieve the result : %s", PQresultErrorMessage(my_result));
+        char *errResultMsg;
+        const char *omsg;
+        size_t len;
+        omsg = PQerrorMessage(my_connection);
+        len = strlen(omsg);
+        errResultMsg = malloc(len + 80); /* 80 should be larger than the length of "could not ..."*/
+        snprintf(errResultMsg, len + 80, "could not Retrieve the result : %s", omsg);
         RS_DBI_errorMessage(errResultMsg, RS_DBI_ERROR);
+        free(errResultMsg);
 
         /*  Frees the storage associated with a PGresult.
          *  void PQclear(PGresult *res);   */
@@ -440,29 +474,28 @@ RS_PostgreSQL_createDataMappings(Res_Handle * rsHandle)
          * table.
          */
 
-        if (PQftablecol(my_result, j) != 0) {
+        flds->nullOk[j] = (Sint) INT_MIN; /* This should translate to NA in R */
 
+        if (PQftablecol(my_result, j) != 0) {
             /* Code to find whether a row can be nullable or not */
-            sprintf(buff, "select attnotnull from pg_attribute where attrelid=%d and attnum='%d'",
+            /* we might better just store the table id and column number 
+               for lazy evaluation at dbColumnInfo call*/
+            /* although the database structure can change, we are not in transaction anyway 
+               and there is no guarantee in current code */
+            snprintf(buff, 1000, "select attnotnull from pg_attribute where attrelid=%d and attnum='%d'",
                     PQftable(my_result, j), PQftablecol(my_result, j));
             res = PQexec(conn, buff);
 
-            if (strcmp(PQgetvalue(res, 0, 0), "f") == 0) {
-                flds->nullOk[j] = (Sint) 1;
-            }
-            else {
-                flds->nullOk[j] = (Sint) 0;
-            }
-
+	    if (res && (PQntuples(res) > 0)){
+                const char * attnotnull = PQgetvalue(res, 0, 0);
+		if(strcmp(attnotnull, "f") == 0) {
+		    flds->nullOk[j] = (Sint) 1; /* nollOK is TRUE when attnotnull is f*/
+                }
+		if(strcmp(attnotnull, "t") == 0) {
+		    flds->nullOk[j] = (Sint) 0; /* nollOK is FALSE when attnotnull is t*/
+                }
+	    }
             PQclear(res);
-
-        }
-        else {
-            /* 'else' gets executed when the column in result does not
-             * belong to the table.for eg. in the * query "SELECT
-             * COUNT(*) FROM TABLE_NAME" or "SHOW DateStyle", nullOK
-             * is always false */
-            flds->nullOk[j] = (Sint) 0;
         }
 
         internal_type = (int) PQftype(my_result, j);
@@ -512,7 +545,7 @@ RS_PostgreSQL_createDataMappings(Res_Handle * rsHandle)
         default:
             flds->Sclass[j] = CHARACTER_TYPE;
             flds->isVarLength[j] = (Sint) 1;
-            (void) sprintf(errMsg, "unrecognized PostgreSQL field type %d in column %d", internal_type, j);
+            snprintf(errMsg, 128, "unrecognized PostgreSQL field type %d in column %d", internal_type, j);
             RS_DBI_errorMessage(errMsg, RS_DBI_WARNING);
             break;
         }
@@ -706,7 +739,7 @@ RS_PostgreSQL_fetch(s_object * rsHandle, s_object * max_rec)
                 }
                 else {
                     char warn[64];
-                    (void) sprintf(warn, "unrecognized field type %d in column %d", (int) fld_Sclass[j], (int) j);
+                    snprintf(warn, 64, "unrecognized field type %d in column %d", (int) fld_Sclass[j], (int) j);
                     RS_DBI_errorMessage(warn, RS_DBI_WARNING);
                     SET_LST_CHR_EL(output, j, i, C_S_CPY(PQgetvalue(my_result, k, j))); /* NOTE: changed */
                 }
@@ -1292,7 +1325,7 @@ RS_PostgreSQL_dbApply(s_object * rsHandle,      /* resultset handle */
                 else {
                     if ((size_t) PQfsize(my_result, j) != strlen(PQgetvalue(my_result, row_counter, j))) {      /* NOTE: changed */
                         char warn[128];
-                        (void) sprintf(warn, "internal error: row %ld field %ld truncated", (long) i, (long) j);
+                        snprintf(warn, 128, "internal error: row %ld field %ld truncated", (long) i, (long) j);
                         RS_DBI_errorMessage(warn, RS_DBI_WARNING);
                     }
                     SET_LST_CHR_EL(data, j, i, C_S_CPY(PQgetvalue(my_result, row_counter, j))); /* NOTE: changed */
@@ -1340,7 +1373,7 @@ RS_PostgreSQL_dbApply(s_object * rsHandle,      /* resultset handle */
                 }
                 else {
                     char warn[64];
-                    (void) sprintf(warn, "unrecognized field type %d in column %d", (int) fld_Sclass[j], (int) j);
+                    snprintf(warn, 64, "unrecognized field type %d in column %d", (int) fld_Sclass[j], (int) j);
                     RS_DBI_errorMessage(warn, RS_DBI_WARNING);
                     SET_LST_CHR_EL(data, j, i, C_S_CPY(PQgetvalue(my_result, row_counter, j)));
                 }
