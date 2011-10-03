@@ -1,5 +1,5 @@
 ## zzz.R
-## Last Modified: $Date: 2008-10-08 19:56:45 -0500 (Wed, 08 Oct 2008) $
+## $Id: zzz.R 189 2011-10-01 13:16:39Z dirk.eddelbuettel $
 
 ## This package was developed as a part of Summer of Code program organized by Google.
 ## Thanks to David A. James & Saikat DebRoy, the authors of RMySQL package.

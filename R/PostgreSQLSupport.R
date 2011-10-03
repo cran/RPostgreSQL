@@ -1,6 +1,6 @@
 
 ## PostgreSQLSupport.R
-## Last Modified: $Date: 2010-10-12 22:07:19 -0500 (Tue, 12 Oct 2010) $
+## $Id: PostgreSQLSupport.R 189 2011-10-01 13:16:39Z dirk.eddelbuettel $
 
 ## This package was developed as a part of Summer of Code program organized by Google.
 ## Thanks to David A. James & Saikat DebRoy, the authors of RMySQL package.
@@ -204,13 +204,36 @@ postgresqlEscapeStrings <- function(con, preescapedstring) {
     return(escapedstring)
 }
 
+postgresqlpqExec <- function(con, statement) {
+    if(!isIdCurrent(con))
+        stop(paste("expired", class(con)))
+    conId <- as(con, "integer")
+    statement <- as(statement, "character")
+    .Call("RS_PostgreSQL_pqexec", conId, statement, PACKAGE = .PostgreSQLPkgName)
+}
 postgresqlCopyIn <- function(con, filename) {
     if(!isIdCurrent(con))
         stop(paste("expired", class(con)))
     conId <- as(con, "integer")
-    statement <- as(filename, "character")
+    filename <- as(filename, "character")
     .Call("RS_PostgreSQL_CopyIn", conId, filename, PACKAGE = .PostgreSQLPkgName)
 }
+postgresqlCopyInDataframe <- function(con, dataframe) {
+    if(!isIdCurrent(con))
+        stop(paste("expired", class(con)))
+    conId <- as(con, "integer")
+    nrow <- nrow(dataframe)
+    p <- ncol(dataframe)
+    .Call("RS_PostgreSQL_CopyInDataframe", conId, dataframe, nrow, p , PACKAGE = .PostgreSQLPkgName)
+}
+postgresqlgetResult <- function(con) {
+    if(!isIdCurrent(con))
+        stop(paste("expired", class(con)))
+    conId <- as(con, "integer")
+    rsId <- .Call("RS_PostgreSQL_getResult", conId, PACKAGE = .PostgreSQLPkgName)
+    new("PostgreSQLResult", Id = rsId)
+}
+
 
 ## helper function: it exec's *and* retrieves a statement. It should
 ## be named somehting else.
@@ -455,7 +478,7 @@ postgresqlCloseResult <- function(res, ...) {
 
 ## Use NULL, "", or 0 as row.names to prevent using any field as row.names.
 postgresqlReadTable <- function(con, name, row.names = "row_names", check.names = TRUE, ...) {
-    out <- dbGetQuery(con, paste("SELECT * from", postgresqlQuoteId(name)))
+    out <- dbGetQuery(con, paste("SELECT * from", postgresqlTableRef(name)))
     if(check.names)
         names(out) <- make.names(names(out), unique = TRUE)
     ## should we set the row.names of the output data.frame?
@@ -591,12 +614,6 @@ postgresqlWriteTable <- function(con, name, value, field.types, row.names = TRUE
         field.types <- sapply(value, dbDataType, dbObj = con)
     }
 
-    ## Do we need to coerce any field prior to write it out?
-    ## TODO: PostgreSQL has boolean data type.
-    for(i in seq(along = value)){
-        if(is(value[[i]], "logical"))
-            value[[i]] <- as(value[[i]], "integer")
-    }
     i <- match("row.names", names(field.types), nomatch=0)
     if(i>0) ## did we add a row.names value?  If so, it's a text field.
         ## MODIFIED -- Sameer
@@ -625,7 +642,7 @@ postgresqlWriteTable <- function(con, name, value, field.types, row.names = TRUE
     }
     if(!dbExistsTable(con,name)){      ## need to re-test table for existance
         ## need to create a new (empty) table
-        sql1 <- paste("create table ", postgresqlQuoteId(name), "\n(\n\t", sep="")
+        sql1 <- paste("create table ", postgresqlTableRef(name), "\n(\n\t", sep="")
         sql2 <- paste(paste(postgresqlQuoteId(names(field.types)), field.types), collapse=",\n\t",
                       sep="")
         sql3 <- "\n)\n"
@@ -639,34 +656,28 @@ postgresqlWriteTable <- function(con, name, value, field.types, row.names = TRUE
         }
     }
 
-    ## TODO: here, we should query the PostgreSQL to find out if it supports
-    ## LOAD DATA thru pipes; if so, should open the pipe instead of a file.
-    ##
-    ## It appears that this will fail under SELinux as the temporary file (created
-    ## in the R per-session temporary directory) is outside of Postgresql's directory
-    ## So if you use SELinux, you may have to manually insert data or temporarily turn
-    ## SELinux off to use this function
-    if(as.character(Sys.info()["sysname"]) %in% c("Linux", "Darwin"))
-        fn <- tempfile("rsdbi","/tmp")
-    else
-        fn <- tempfile("rsdbi")
-    ## copied from MySQL, not sure we need it  fn <- gsub("\\\\", "/", fn)  # Since PostgreSQL on Windows wants \ double (BDR)
-    safe.write(value, file = fn)
-    on.exit(unlink(fn), add = TRUE)
+    ## convert columns we can't handle in C code
+    value[] <- lapply(value, function(z) {
+        if(is.object(z) && !is.factor(z)) as.character(z) else z
+    })
+    oldenc <- dbGetQuery(new.con, "SHOW client_encoding")
+    postgresqlpqExec(new.con, "SET CLIENT_ENCODING TO 'UTF8'")
+    sql4 <- paste("COPY", postgresqlTableRef(name), "FROM STDIN")
+    postgresqlpqExec(new.con, sql4)
+    postgresqlCopyInDataframe(new.con, value)
+    rs<-postgresqlgetResult(new.con)
 
-    sql4 <- paste("COPY", postgresqlQuoteId(name), "FROM STDIN")
-
-    rs <- try(dbSendQuery(new.con, sql4))
-    postgresqlCopyIn(new.con, fn)
-
+    retv <- TRUE
     if (inherits(rs, ErrorClass)) {
         warning("could not load data into table")
-        return(FALSE)
-    } else {
-        dbClearResult(rs)
+        retv <- FALSE
     }
-    TRUE
 
+    dbClearResult(rs)
+    sql5 <- paste("SET CLIENT_ENCODING TO '", oldenc, "'", sep="")
+    dbGetQuery(new.con, sql5)
+
+    retv
 }
 
 dbBuildTableDefinition <- function(dbObj, name, obj, field.types = NULL, row.names = TRUE, ...) {
@@ -687,7 +698,7 @@ dbBuildTableDefinition <- function(dbObj, name, obj, field.types = NULL, row.nam
 
     ## need to create a new (empty) table
     flds <- paste(postgresqlQuoteId(names(field.types)), field.types)
-    paste("CREATE TABLE", postgresqlQuoteId(name), "\n(", paste(flds, collapse=",\n\t"), "\n)")
+    paste("CREATE TABLE", postgresqlTableRef(name), "\n(", paste(flds, collapse=",\n\t"), "\n)")
 }
 
 ## the following is almost exactly from the ROracle driver
@@ -733,10 +744,9 @@ safe.write <- function(value, file, batch, ...) {
 ## NOTE: PostgreSQL data types differ from the SQL92 (e.g., varchar truncate
 ## trailing spaces).
 postgresqlDataType <- function(obj, ...) {
-    rs.class <- data.class(obj)    ## this differs in R 1.4 from older vers
-    rs.mode <- storage.mode(obj)
-    if(rs.class=="numeric" || rs.class == "integer"){
-        sql.type <- if(rs.mode=="integer") "bigint" else  "float8"
+    rs.class <- data.class(obj)
+    if(rs.class=="numeric"){
+        sql.type <- if(class(obj)=="integer") "integer" else  "float8"
     }
     else {
         sql.type <- switch(rs.class,
@@ -744,13 +754,19 @@ postgresqlDataType <- function(obj, ...) {
                            logical = "bool",
                            factor = "text",
                            ordered = "text",
+                           Date = "date",
+                           POSIXct = "timestamp with time zone",
                            "text")
     }
     sql.type
 }
 
-postgresqlQuoteId <- function(identifier){
-    ret <- paste('"', gsub('"','""',identifier), '"', sep="")
+postgresqlQuoteId <- function(identifiers){
+    ret <- paste('"', gsub('"','""',identifiers), '"', sep="")
+    ret
+}
+postgresqlTableRef <- function(identifiers){
+    ret <- paste('"', gsub('"','""',identifiers), '"', sep="", collapse=".")
     ret
 }
 

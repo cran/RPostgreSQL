@@ -1,4 +1,4 @@
-/* $Id: S4R.h,v 1.3 2003/12/02 14:54:33 dj Exp dj $
+/* $Id: S4R.h 189 2011-10-01 13:16:39Z dirk.eddelbuettel $
  *
  * S4 (Splus5+) and R portability macros.
  *
@@ -56,6 +56,7 @@ extern "C" {
  */
 
 #    ifdef USING_R
+#        include "R.h"
 #        include "Rversion.h"
 #        if defined(R_VERSION) && R_VERSION >= R_Version(1,2,0)
 #            define USE_RINTERNALS 1
@@ -69,7 +70,6 @@ extern "C" {
 #            include "Rdefines.h"
 #        endif
 #        define singl double
-#        define Sint  int
 #        define charPtr SEXP *
 #        define CHAR_DEREF(x) CHAR(x)
 #        define C_S_CPY(p)    COPY_TO_USER_STRING(p)

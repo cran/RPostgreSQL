@@ -2,9 +2,9 @@
 #    define _RS_POSTGRESQL_H 1
 
 /*
- *    RS-PostgreSQL.h
+ * RS-PostgreSQL.h
  *
- * Last Modified: $Date: 2010-10-13 12:31:28 -0500 (Wed, 13 Oct 2010) $
+ * $Id: RS-PostgreSQL.h 189 2011-10-01 13:16:39Z dirk.eddelbuettel $
  *
  * This package was developed as a part of Summer of Code program organized by Google.
  * Thanks to David A. James & Saikat DebRoy, the authors of RMySQL package.

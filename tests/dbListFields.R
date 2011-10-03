@@ -1,19 +1,16 @@
-
-## dbWriteTable test
+## dbListFields test
 ##
 ## Assumes that
 ##  a) PostgreSQL is running, and
 ##  b) the current user can connect
 ## both of which are not viable for release but suitable while we test
 ##
-## Dirk Eddelbuettel, 10 Sep 2009
 
 ## only run this if this env.var is set correctly
 if (Sys.getenv("POSTGRES_USER") != "" & Sys.getenv("POSTGRES_HOST") != "" & Sys.getenv("POSTGRES_DATABASE") != "") {
 
     ## try to load our module and abort if this fails
     stopifnot(require(RPostgreSQL))
-    stopifnot(require(datasets))
 
     ## load the PostgresSQL driver
     drv <- dbDriver("PostgreSQL")
@@ -27,20 +24,34 @@ if (Sys.getenv("POSTGRES_USER") != "" & Sys.getenv("POSTGRES_HOST") != "" & Sys.
                      port=ifelse((p<-Sys.getenv("POSTGRES_PORT"))!="", p, 5432))
 
 
-
-    a <- dbGetQuery(con, "CREATE TABLE foo (name text)")
-    b <- dbGetQuery(con, "INSERT INTO foo VALUES ('bar')")
+    #  create a table
+    res <- dbGetQuery(con, "CREATE SCHEMA testschema")
+    res <- dbGetQuery(con, "CREATE TABLE testschema.aa (pid integer, name text)")
+    res <- dbGetQuery(con, "CREATE TABLE aa (pk integer, v1 float not null, v2 float)" )
 
     ## run a simple query and show the query result
-    x <- dbSendQuery(con, "CREATE TEMPORARY TABLE xyz ON COMMIT DROP AS select * from foo limit 1; select * from xyz;")
-    res <- fetch(x, n=-1)
-    print(res)
-    a <- dbGetQuery(con, "DROP TABLE foo")
+    df <- dbListFields(con, "aa")
+    print(df)
+    if (length(df) == 3){
+      cat("PASS: 3 fields returned\n")
+    }else{
+      cat(paste("FAIL:", length(df), "fields returned\n"))
+    } 
+
+    df <- dbListFields(con, c("testschema", "aa"))
+    print(df)
+    if (length(df) == 2){
+      cat("PASS: 2 fields returned\n")
+    }else{
+      cat(paste("FAIL:", length(df), "fields returned\n"))
+    } 
 
 
     ## cleanup
-
+    cat("Removing \"AA\"\n")
+    dbRemoveTable(con, "aa")
+    dbGetQuery(con, "DROP TABLE testschema.aa")
+    dbGetQuery(con, "DROP SCHEMA testschema")
     ## and disconnect
     dbDisconnect(con)
-    cat("PASS -- ended without segmentation fault\n")
 }

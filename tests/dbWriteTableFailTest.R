@@ -27,20 +27,44 @@ if (Sys.getenv("POSTGRES_USER") != "" & Sys.getenv("POSTGRES_HOST") != "" & Sys.
                      port=ifelse((p<-Sys.getenv("POSTGRES_PORT"))!="", p, 5432))
 
 
+    if (dbExistsTable(con, "rockdata")) {
+        print("Removing rockdata\n")
+        dbRemoveTable(con, "rockdata")
+    }
+    cat("create incompatible table rockdata\n")
+    dbGetQuery(con, "CREATE TABLE rockdata (a int, b varchar(5))")
 
-    a <- dbGetQuery(con, "CREATE TABLE foo (name text)")
-    b <- dbGetQuery(con, "INSERT INTO foo VALUES ('bar')")
+    cat("write table to rockdata with append=TRUE\n")
+    try({res <-dbWriteTable(con, 'rockdata', rock, append=TRUE, overwrite=FALSE)
+        print(res)
+        if(res == FALSE){
+           cat("PASS as the return value is false\n")
+        }else{
+           cat("FAIL as the return value is true\n")
+        }
+    })
 
+    cat("write table to rockdata\n")
+    try({res <- dbWriteTable(con, 'rockdata', rock)
+        if(res == FALSE){
+        print(res)
+           cat("PASS as the return value is false\n")
+        }else{
+           cat("FAIL as the return value is true\n")
+        }
+    })
+  
     ## run a simple query and show the query result
-    x <- dbSendQuery(con, "CREATE TEMPORARY TABLE xyz ON COMMIT DROP AS select * from foo limit 1; select * from xyz;")
-    res <- fetch(x, n=-1)
+    res <- dbGetQuery(con, "select * from rockdata limit 10")
     print(res)
-    a <- dbGetQuery(con, "DROP TABLE foo")
 
 
     ## cleanup
+    if (dbExistsTable(con, "rockdata")) {
+        print("Removing rockdata\n")
+        dbRemoveTable(con, "rockdata")
+    }
 
     ## and disconnect
     dbDisconnect(con)
-    cat("PASS -- ended without segmentation fault\n")
 }

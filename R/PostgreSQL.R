@@ -1,6 +1,5 @@
-
 ## PostgreSQL.R
-## Last Modified: $Date: 2010-10-12 22:07:19 -0500 (Tue, 12 Oct 2010) $
+## $Id: PostgreSQL.R 189 2011-10-01 13:16:39Z dirk.eddelbuettel $
 
 ## This package was developed as a part of Summer of Code program organized by Google.
 ## Thanks to David A. James & Saikat DebRoy, the authors of RMySQL package.
@@ -13,7 +12,7 @@
 
 ##.PostgreSQLRCS <- "$Id: PostgreSQL.R,v 0.1 2008/06/10 14:00:00$"
 .PostgreSQLPkgName <- "RPostgreSQL"
-.PostgreSQLVersion <- "0.1-0"       ##package.description(.PostgreSQLPkgName, fields = "Version")
+.PostgreSQLVersion <- "0.2-0"       ##package.description(.PostgreSQLPkgName, fields = "Version")
 .PostgreSQL.NA.string <- "\\N"      ## on input, PostgreSQL interprets \N as NULL (NA)
 
 setOldClass("data.frame")      ## to appease setMethod's signature warnings...
@@ -101,7 +100,7 @@ setMethod("dbDisconnect", "PostgreSQLConnection",
           )
 
 setGeneric("dbEscapeStrings", def = function(conn, string, ...) standardGeneric("dbEscapeStrings"))
-setMethod("dbEscapeStrings", 
+setMethod("dbEscapeStrings",
           signature(conn="PostgreSQLConnection", string="character"),
           def = function(conn, string, ...) postgresqlEscapeStrings(conn, string, ...),
           valueClass = "character"
@@ -181,19 +180,23 @@ setMethod("dbWriteTable",
 setMethod("dbExistsTable",
           signature(conn="PostgreSQLConnection", name="character"),
           def = function(conn, name, ...){
-              ## Edd 09 Oct 2009: Fusion of patches by Joe Conway and Prasenjit Kapat
-              names <- strsplit(name, ".", fixed=TRUE)[[1]]
-              if (length(names) == 2) {		# format was "public.sometable"
+              qlength <- length(name)
+              if(qlength == 1){
+              currentschema <- dbGetQuery(conn, "SELECT current_schema()")
+              res <- dbGetQuery(conn,
+                  paste("select tablename from pg_tables where ",
+                  "schemaname !='information_schema' and schemaname !='pg_catalog' ",
+                  "and schemaname='", postgresqlEscapeStrings(conn, currentschema[[1]]), "' ",
+                  "and tablename='", postgresqlEscapeStrings(conn, name), "'", sep=""))
+              }
+              else{
+                  if(qlength == 2){
                   res <- dbGetQuery(conn,
-                                    paste("select schemaname,tablename from pg_tables where ",
-                                          "schemaname !='information_schema' ",
-                                          "and schemaname !='pg_catalog' and schemaname='",
-                                          names[1], "' and tablename='", postgresqlEscapeStrings(conn, names[2]), "'", sep=""))
-              } else {
-                  res <- dbGetQuery(conn,
-                                    paste("select tablename from pg_tables where ",
-                                          "schemaname !='information_schema' and schemaname !='pg_catalog' ",
-                                          "and tablename='", postgresqlEscapeStrings(conn, names[1]), "'", sep=""))
+                      paste("select tablename from pg_tables where ",
+                      "schemaname !='information_schema' and schemaname !='pg_catalog' ",
+                      "and schemaname='", postgresqlEscapeStrings(conn, name[1]), "' ",
+                      "and tablename='", postgresqlEscapeStrings(conn, name[2]), "'", sep=""))
+                  }
               }
               return(as.logical(dim(res)[1]))
           },
@@ -204,7 +207,7 @@ setMethod("dbRemoveTable",
           signature(conn="PostgreSQLConnection", name="character"),
           def = function(conn, name, ...){
               if(dbExistsTable(conn, name)){
-                  rc <- try(dbGetQuery(conn, paste("DROP TABLE", postgresqlQuoteId(name))))
+                  rc <- try(dbGetQuery(conn, paste("DROP TABLE", postgresqlTableRef(name))))
                   !inherits(rc, ErrorClass)
               }
               else FALSE
@@ -216,8 +219,25 @@ setMethod("dbRemoveTable",
 setMethod("dbListFields",
           signature(conn="PostgreSQLConnection", name="character"),
           def = function(conn, name, ...){
-              flds <- dbGetQuery(conn, paste("SELECT a.attname FROM pg_class c,pg_attribute a,pg_type t WHERE c.relname = '",
-                                             name,"' and a.attnum > 0 and a.attrelid = c.oid and a.atttypid = t.oid",sep=""))[,1]
+              qlength <- length(name)
+              if(qlength == 1){
+              currentschema <- dbGetQuery(conn, "SELECT current_schema()")
+              flds <- dbGetQuery(conn,
+                  paste("select a.attname from pg_attribute a, pg_class c, pg_tables t, pg_namespace nsp",
+                  " where a.attrelid = c.oid and c.relname = tablename and c.relnamespace = nsp.oid and a.attnum > 0 and ",
+                  "nspname = current_schema() and schemaname = nspname and ",
+                  "tablename = '", postgresqlEscapeStrings(conn, name), "'", sep=""))[,1]
+              }
+              else{
+                  if(qlength == 2){
+                  flds <- dbGetQuery(conn,
+                      paste("select a.attname from pg_attribute a, pg_class c, pg_tables t, pg_namespace nsp",
+                      " where a.attrelid = c.oid and c.relname = t.tablename and c.relnamespace = nsp.oid and a.attnum > 0 and ",
+                      "nspname = schemaname ",
+                      "and schemaname = '", postgresqlEscapeStrings(conn, name[1]), "' ",
+                      "and tablename = '", postgresqlEscapeStrings(conn, name[2]), "'", sep=""))[,1]
+                  }
+              }
 
               if(length(flds)==0)
                   flds <- character()

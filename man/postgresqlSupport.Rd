@@ -18,9 +18,13 @@
 \alias{postgresqlDescribeFields}
 \alias{postgresqlReadTable}
 \alias{postgresqlWriteTable}            % convenience functions
+\alias{postgresqlpqExec}
 \alias{postgresqlCopyIn}
+\alias{postgresqlCopyInDataframe}
+\alias{postgresqlgetResult}
 \alias{postgresqlEscapeStrings}
 \alias{postgresqlQuoteId}
+\alias{postgresqlTableRef}
 \alias{postgresqlImportFile}
 \alias{postgresqlDataType}
 \alias{postgresqlTransactionStatement}   % transaction management 
@@ -64,9 +68,12 @@
    postgresqlReadTable(con, name, row.names = "row_names", check.names = TRUE, ...)
    postgresqlWriteTable(con, name, value, field.types, row.names = TRUE,
       overwrite=FALSE, append=FALSE, ..., allow.keywords = FALSE)
+   postgresqlpqExec(con, statement)
    postgresqlCopyIn(con, filename)
+   postgresqlgetResult(con)
    postgresqlEscapeStrings(con, preescapedstring)
-   postgresqlQuoteId(identifier)
+   postgresqlQuoteId(identifiers)
+   postgresqlTableRef(identifiers)
    postgresqlImportFile(con, name, value, field.types, overwrite=FALSE,
       append=FALSE, header, row.names, nrows=50, sep=",", eol="\n", 
       skip = 0, quote="\"", ...)
@@ -110,7 +117,8 @@
    and \code{postgresqlCloneConnection}.
 }
 \item{res}{
-   an \code{PostgreSQLResult} object as produced by by \code{postgresqlExecStatement}.
+   an \code{PostgreSQLResult} object as produced by by \code{postgresqlExecStatement}
+   and \code{postgresqlgetResult}.
 }
 \item{user}{
    a character string with the PostgreSQL's user name.
@@ -197,7 +205,7 @@ Command-line options to be sent to the server
    to modify column names to make them legal PostgreSQL identifiers.
    }
 \item{preescapedstring}{character string to be escaped}
-\item{identifier}{character string to be used as identfier in SQL statement}
+\item{identifiers}{one or more character strings to be used as identfier in SQL statement}
 \item{filename}{character string indicating the file which contains the data to be copied to the PostgreSQL backend}
 \item{\dots}{
    placeholder for future use.
@@ -252,15 +260,31 @@ Command-line options to be sent to the server
    \code{postgresqlWriteTable}  returns a logical indicating whether the
    operation succeeded or not.
 
+   \code{postgresqlpqExec}  returns \code{NUL} (executes the statement
+   but does not try to get result.  This is called internally
+   from \code{postgresqlWriteTable} before \code{postgresqlCopyInDataframe}
+
    \code{postgresqlCopyIn}  returns \code{NULL} (copies the content 
    of the file through the socket connection to postgresql backend.
+   This should be used just after COPY tablename FROM STDIN query. This is not used now.)
+
+   \code{postgresqlCopyInDataframe}  returns \code{NULL} (copies the content 
+   of the dataframe through the socket connection to postgresql backend. 
+   Strings are encoded as UTF-8 for transfer.  The client_encoding should be set to UTF-8.
    This should be used just after COPY tablename FROM STDIN query.)
+
+   \code{postgresqlgetResult}  returns an \code{PostgreSQLResult} object.  
+   This is called after completion of execution of \code{postgresqlpqExec}.
 
    \code{postgresqlEscapeStrings} returns a character string which is escaped properly
    so that it can be surrounded with a single quote and used as literal in SQL.
    The escape procedure is dependent on the character encoding of the connection.
 
-   \code{postgresqlQuoteId} returns a character string which is quoted as identifier.
+   \code{postgresqlQuoteId} returns a character string which is quoted as identifier. Returns vector on vector arguemnt.
+
+   \code{postgresqlTableRef} returns a character string which is quoted as identifier. 
+    Reterns a charcter string concatenated with "." so that "dbname"."schemaname"."tablename" reference
+    is created upon c("dbname", "schemaname", "tablename") arguemnt.
    
    \code{postgresqlDataType} retuns a character string with the closest
    

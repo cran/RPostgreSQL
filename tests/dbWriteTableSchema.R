@@ -27,20 +27,24 @@ if (Sys.getenv("POSTGRES_USER") != "" & Sys.getenv("POSTGRES_HOST") != "" & Sys.
                      port=ifelse((p<-Sys.getenv("POSTGRES_PORT"))!="", p, 5432))
 
 
+    if (dbExistsTable(con, c("public", "rockdata"))) {
+        print("Removing rockdata\n")
+        dbRemoveTable(con, c("public", "rockdata"))
+    }
 
-    a <- dbGetQuery(con, "CREATE TABLE foo (name text)")
-    b <- dbGetQuery(con, "INSERT INTO foo VALUES ('bar')")
+    dbWriteTable(con, c("public", "rockdata"), rock)
 
     ## run a simple query and show the query result
-    x <- dbSendQuery(con, "CREATE TEMPORARY TABLE xyz ON COMMIT DROP AS select * from foo limit 1; select * from xyz;")
-    res <- fetch(x, n=-1)
+    res <- dbGetQuery(con, "select * from public.rockdata limit 10")
     print(res)
-    a <- dbGetQuery(con, "DROP TABLE foo")
 
 
     ## cleanup
+    if (dbExistsTable(con, c("public", "rockdata"))) {
+        print("Removing rockdata\n")
+        dbRemoveTable(con, c("public", "rockdata"))
+    }
 
     ## and disconnect
     dbDisconnect(con)
-    cat("PASS -- ended without segmentation fault\n")
 }
