@@ -1,7 +1,7 @@
 /*
  *    RS-pgsql-copy.c
  *
- *    $Id: RS-pgsql-copy.c 190 2011-10-01 14:27:35Z dirk.eddelbuettel $
+ *    $Id: RS-pgsql-copy.c 212 2011-11-22 10:58:50Z tomoakin@kenroku.kanazawa-u.ac.jp $
  */
 
 #include "RS-PostgreSQL.h"
@@ -253,14 +253,13 @@ RS_PostgreSQL_CopyInDataframe(Con_Handle * conHandle, SEXP x, SEXP nrow, SEXP nc
 
     if(isVectorList(x)) { /* A data frame */
         R_StringBuffer rstrbuf = {NULL, 0, 10000};
-        void *p;
         
         char *strBuf  = Calloc(buff_threshold * 2 + 2, char); /* + 2 for '\t' or '\n' plus '\0'*/
         char *strendp = strBuf;
         SEXP *levels;
         *strendp = '\0';
 
-        p = R_AllocStringBuffer(10000, &rstrbuf);
+        R_AllocStringBuffer(10000, &rstrbuf);
 	/* handle factors internally, check integrity */
 	levels = (SEXP *) R_alloc(nc, sizeof(SEXP));
 	for(j = 0; j < nc; j++) {

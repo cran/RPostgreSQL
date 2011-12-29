@@ -1,5 +1,5 @@
 ## Class: dbObjectId
-## $Id: dbObjectId.R 189 2011-10-01 13:16:39Z dirk.eddelbuettel $
+## $Id: dbObjectId.R 220 2011-12-03 12:50:46Z tomoakin@kenroku.kanazawa-u.ac.jp $
 
 ## This package was developed as a part of Summer of Code program organized by Google.
 ## Thanks to David A. James & Saikat DebRoy, the authors of RMySQL package.
@@ -42,7 +42,7 @@ setMethod("show", "dbObjectId", def = function(object) print(object))
 
 setMethod("print", "dbObjectId",
           def = function(x, ...){
-              expired <- if(isIdCurrent(x)) "" else "Expired "
+              expired <- if(isPostgresqlIdCurrent(x)) "" else "Expired "
               str <- paste("<", expired, class(x), ":", format(x), ">", sep="")
               cat(str, "\n")
               invisible(NULL)
@@ -50,7 +50,7 @@ setMethod("print", "dbObjectId",
           )
 
 ## verify that obj refers to a currently open/loaded database
-isIdCurrent <- function(obj) {
+isPostgresqlIdCurrent <- function(obj) {
     obj <- as(obj, "integer")
     .Call("RS_DBI_validHandle", obj, PACKAGE = .PostgreSQLPkgName)
 }

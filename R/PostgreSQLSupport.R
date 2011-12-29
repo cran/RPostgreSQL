@@ -1,6 +1,6 @@
 
 ## PostgreSQLSupport.R
-## $Id: PostgreSQLSupport.R 189 2011-10-01 13:16:39Z dirk.eddelbuettel $
+## $Id: PostgreSQLSupport.R 222 2011-12-04 03:59:10Z tomoakin@kenroku.kanazawa-u.ac.jp $
 
 ## This package was developed as a part of Summer of Code program organized by Google.
 ## Thanks to David A. James & Saikat DebRoy, the authors of RMySQL package.
@@ -25,7 +25,7 @@ postgresqlInitDriver <- function(max.con=16, fetch.default.rec = 500, force.relo
 }
 
 postgresqlCloseDriver <- function(drv, ...) {
-   if(!isIdCurrent(drv))
+   if(!isPostgresqlIdCurrent(drv))
       return(TRUE)
    drvId <- as(drv, "integer")
    .Call("RS_PostgreSQL_closeManager", drvId, PACKAGE = .PostgreSQLPkgName)
@@ -55,7 +55,7 @@ postgresqlDescribeDriver <- function(obj, verbose = FALSE, ...) {
 }
 
 postgresqlDriverInfo <- function(obj, what="", ...) {
-    if(!isIdCurrent(obj))
+    if(!isPostgresqlIdCurrent(obj))
         stop(paste("expired", class(obj)))
     drvId <- as(obj, "integer")
     info <- .Call("RS_PostgreSQL_managerInfo", drvId, PACKAGE = .PostgreSQLPkgName)
@@ -76,34 +76,33 @@ postgresqlDriverInfo <- function(obj, what="", ...) {
 ## The distinction between "" and NULL is that "" is interpreted by
 ## the PostgreSQL API as the default database (PostgreSQL config specific)
 ## while NULL means "no database".
-postgresqlNewConnection <- function(drv, user="", password="",
-                                    host="",dbname = "",
-                                    port = "", tty ="",options="" ) {
-    if (!isIdCurrent(drv))
+postgresqlNewConnection <- function(drv, user = "", password = "",
+                                    host = "", dbname = "",
+                                    port = "", tty = "", options = "") {
+    if(!isPostgresqlIdCurrent(drv))
         stop("expired manager")
-    if (is.null(user))
+    if(is.null(user))
         stop("user argument cannot be NULL")
-    if (is.null(password))
+    if(is.null(password))
         stop("password argument cannot be NULL")
-    if (is.null(host))
-        stop("host argument cannot be NULL")
-    if (is.null(dbname))
+    if(is.null(dbname))
         stop("dbname argument cannot be NULL")
-    if (is.null(port))
+    if(is.null(port))
         stop("port argument cannot be NULL")
-    if (is.null(tty))
+    if(is.null(tty))
         stop("tty argument cannot be NULL")
+
     con.params <- as.character(c(user, password, host,
                                  dbname, port,
-                                 tty,options))
+                                 tty, options))
 
     drvId <- as(drv, "integer")
-    conId <- .Call("RS_PostgreSQL_newConnection", drvId, con.params,PACKAGE = .PostgreSQLPkgName)
+    conId <- .Call("RS_PostgreSQL_newConnection", drvId, con.params, PACKAGE = .PostgreSQLPkgName)
     new("PostgreSQLConnection", Id = conId)
 }
 
 postgresqlCloneConnection <- function(con, ...) {
-    if(!isIdCurrent(con))
+    if(!isPostgresqlIdCurrent(con))
         stop(paste("expired", class(con)))
     conId <- as(con, "integer")
     newId <- .Call("RS_PostgreSQL_cloneConnection", conId, PACKAGE = .PostgreSQLPkgName)
@@ -138,7 +137,7 @@ postgresqlDescribeConnection <- function(obj, verbose = FALSE, ...) {
 }
 
 postgresqlCloseConnection <- function(con, ...) {
-    if(!isIdCurrent(con))
+    if(!isPostgresqlIdCurrent(con))
         return(TRUE)
     rs <- dbListResults(con)
     if(length(rs)>0){
@@ -152,7 +151,7 @@ postgresqlCloseConnection <- function(con, ...) {
 }
 
 postgresqlConnectionInfo <- function(obj, what="", ...) {
-    if(!isIdCurrent(obj))
+    if(!isPostgresqlIdCurrent(obj))
         stop(paste("expired", class(obj), deparse(substitute(obj))))
     id <- as(obj, "integer")
     info <- .Call("RS_PostgreSQL_connectionInfo", id, PACKAGE = .PostgreSQLPkgName)
@@ -189,7 +188,7 @@ postgresqlTransactionStatement <- function(con, statement) {
 ## output, otherwise it produces a resultSet that can
 ## be used for fetching rows.
 postgresqlExecStatement <- function(con, statement) {
-    if(!isIdCurrent(con))
+    if(!isPostgresqlIdCurrent(con))
         stop(paste("expired", class(con)))
     conId <- as(con, "integer")
     statement <- as(statement, "character")
@@ -205,21 +204,21 @@ postgresqlEscapeStrings <- function(con, preescapedstring) {
 }
 
 postgresqlpqExec <- function(con, statement) {
-    if(!isIdCurrent(con))
+    if(!isPostgresqlIdCurrent(con))
         stop(paste("expired", class(con)))
     conId <- as(con, "integer")
     statement <- as(statement, "character")
     .Call("RS_PostgreSQL_pqexec", conId, statement, PACKAGE = .PostgreSQLPkgName)
 }
 postgresqlCopyIn <- function(con, filename) {
-    if(!isIdCurrent(con))
+    if(!isPostgresqlIdCurrent(con))
         stop(paste("expired", class(con)))
     conId <- as(con, "integer")
     filename <- as(filename, "character")
     .Call("RS_PostgreSQL_CopyIn", conId, filename, PACKAGE = .PostgreSQLPkgName)
 }
 postgresqlCopyInDataframe <- function(con, dataframe) {
-    if(!isIdCurrent(con))
+    if(!isPostgresqlIdCurrent(con))
         stop(paste("expired", class(con)))
     conId <- as(con, "integer")
     nrow <- nrow(dataframe)
@@ -227,7 +226,7 @@ postgresqlCopyInDataframe <- function(con, dataframe) {
     .Call("RS_PostgreSQL_CopyInDataframe", conId, dataframe, nrow, p , PACKAGE = .PostgreSQLPkgName)
 }
 postgresqlgetResult <- function(con) {
-    if(!isIdCurrent(con))
+    if(!isPostgresqlIdCurrent(con))
         stop(paste("expired", class(con)))
     conId <- as(con, "integer")
     rsId <- .Call("RS_PostgreSQL_getResult", conId, PACKAGE = .PostgreSQLPkgName)
@@ -238,7 +237,7 @@ postgresqlgetResult <- function(con) {
 ## helper function: it exec's *and* retrieves a statement. It should
 ## be named somehting else.
 postgresqlQuickSQL <- function(con, statement) {
-    if(!isIdCurrent(con))
+    if(!isPostgresqlIdCurrent(con))
         stop(paste("expired", class(con)))
     nr <- length(dbListResults(con))
     if (nr > 0) {                   ## are there resultSets pending on con?
@@ -411,7 +410,7 @@ postgresqlFetch <- function(res, n=0, ...) {
     cnt <- dbGetRowCount(res)
     nrec <- length(rel[[1]])
     indx <- seq(from = cnt - nrec + 1, length = nrec)
-    attr(rel, "row.names") <- as.character(indx)
+    attr(rel, "row.names") <- as.integer(indx)
     if(usingR())
         class(rel) <- "data.frame"
     else
@@ -441,7 +440,7 @@ postgresqlFetch <- function(res, n=0, ...) {
 ## and INSERTS, ...  Later on we created a base class dbResult
 ## for non-Select SQL and a derived class resultSet for SELECTS.
 postgresqlResultInfo <- function(obj, what = "", ...) {
-    if(!isIdCurrent(obj))
+    if(!isPostgresqlIdCurrent(obj))
         stop(paste("expired", class(obj), deparse(substitute(obj))))
     id <- as(obj, "integer")
     info <- .Call("RS_PostgreSQL_resultSetInfo", id, PACKAGE = .PostgreSQLPkgName)
@@ -452,7 +451,7 @@ postgresqlResultInfo <- function(obj, what = "", ...) {
 }
 
 postgresqlDescribeResult <- function(obj, verbose = FALSE, ...) {
-    if(!isIdCurrent(obj)){
+    if(!isPostgresqlIdCurrent(obj)){
         print(obj)
         invisible(return(NULL))
     }
@@ -470,14 +469,14 @@ postgresqlDescribeResult <- function(obj, verbose = FALSE, ...) {
 }
 
 postgresqlCloseResult <- function(res, ...) {
-    if(!isIdCurrent(res))
+    if(!isPostgresqlIdCurrent(res))
         return(TRUE)
     rsId <- as(res, "integer")
     .Call("RS_PostgreSQL_closeResultSet", rsId, PACKAGE = .PostgreSQLPkgName)
 }
 
 ## Use NULL, "", or 0 as row.names to prevent using any field as row.names.
-postgresqlReadTable <- function(con, name, row.names = "row_names", check.names = TRUE, ...) {
+postgresqlReadTable <- function(con, name, row.names = "row.names", check.names = TRUE, ...) {
     out <- dbGetQuery(con, paste("SELECT * from", postgresqlTableRef(name)))
     if(check.names)
         names(out) <- make.names(names(out), unique = TRUE)
@@ -558,7 +557,7 @@ postgresqlImportFile <- function(con, name, value, field.types = NULL, overwrite
         ## need to init table, say, with the first nrows lines
         d <- read.table(fn, sep=sep, header=header, skip=skip, nrows=nrows, ...)
         sql <-
-            dbBuildTableDefinition(new.con, name, obj=d, field.types = field.types,
+            postgresqlBuildTableDefinition(new.con, name, obj=d, field.types = field.types,
                                    row.names = row.names)
         rs <- try(dbSendQuery(new.con, sql))
         if(inherits(rs, ErrorClass)){
@@ -618,8 +617,6 @@ postgresqlWriteTable <- function(con, name, value, field.types, row.names = TRUE
     if(i>0) ## did we add a row.names value?  If so, it's a text field.
         ## MODIFIED -- Sameer
         field.types[i] <- dbDataType(dbObj=con, field.types[row.names])
-    names(field.types) <- make.db.names(con, names(field.types),
-                                        allow.keywords = allow.keywords)
     ## Do we need to clone the connection (ie., if it is in use)?
     if(length(dbListResults(con))!=0){
         new.con <- dbConnect(con)              ## there's pending work, so clone
@@ -680,7 +677,7 @@ postgresqlWriteTable <- function(con, name, value, field.types, row.names = TRUE
     retv
 }
 
-dbBuildTableDefinition <- function(dbObj, name, obj, field.types = NULL, row.names = TRUE, ...) {
+postgresqlBuildTableDefinition <- function(dbObj, name, obj, field.types = NULL, row.names = TRUE, ...) {
     if(!is.data.frame(obj))
         obj <- as.data.frame(obj)
     if(!is.null(row.names) && row.names){
@@ -701,41 +698,6 @@ dbBuildTableDefinition <- function(dbObj, name, obj, field.types = NULL, row.nam
     paste("CREATE TABLE", postgresqlTableRef(name), "\n(", paste(flds, collapse=",\n\t"), "\n)")
 }
 
-## the following is almost exactly from the ROracle driver
-## safe.write makes sure write.table doesn't exceed available memory by batching
-## at most batch rows (but it is still slowww)
-safe.write <- function(value, file, batch, ...) {
-
-    N <- nrow(value)
-    if(N<1){
-        warning("no rows in data.frame")
-        return(NULL)
-    }
-    digits <- options(digits = 17)
-    on.exit(options(digits))
-    if(missing(batch) || is.null(batch))
-        batch <- 10000
-    else if(batch<=0)
-        batch <- N
-    from <- 1
-    to <- min(batch, N)
-    while(from<=N){
-        if(usingR())
-            write.table(value[from:to,, drop=FALSE], file = file, append = TRUE,
-                        quote = FALSE, sep="\t", na = .PostgreSQL.NA.string,
-                        row.names=FALSE, col.names=FALSE, eol = '\n', ...)
-        else
-            write.table(value[from:to,, drop=FALSE], file = file, append = TRUE,
-                                        #quote.string = FALSE,
-                        sep="\t", na = .PostgreSQL.NA.string,
-                                        #dimnames.write=FALSE,
-                                        #end.of.row = '\n',
-                        ...)
-        from <- to+1
-        to <- min(to+batch, N)
-    }
-    invisible(NULL)
-}
 
 ## find a suitable SQL data type for the R/S object obj
 ## TODO: Lots and lots!! (this is a very rough first draft)

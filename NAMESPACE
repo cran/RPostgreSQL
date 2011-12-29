@@ -17,7 +17,6 @@ exportClasses(
 exportMethods(
    coerce,
    dbApply,
-   dbBeginTransaction,
    dbCallProc,
    dbClearResult,
    dbColumnInfo,
@@ -59,8 +58,8 @@ exportMethods(
 ## regular functions (most of these will be made private)
 export(
   PostgreSQL,
-  dbBuildTableDefinition,
-  isIdCurrent,
+  postgresqlBuildTableDefinition,
+  isPostgresqlIdCurrent,
   .PostgreSQLKeywords,
   postgresqlInitDriver,
   postgresqlCloseDriver,
@@ -89,8 +88,7 @@ export(
   postgresqlEscapeStrings,
   postgresqlDataType,
   postgresqlQuoteId,
-  postgresqlTableRef,
-  safe.write
+  postgresqlTableRef
 )
 
 ## constants

@@ -1,5 +1,5 @@
 ## PostgreSQL.R
-## $Id: PostgreSQL.R 189 2011-10-01 13:16:39Z dirk.eddelbuettel $
+## $Id: PostgreSQL.R 223 2011-12-29 11:31:45Z tomoakin@kenroku.kanazawa-u.ac.jp $
 
 ## This package was developed as a part of Summer of Code program organized by Google.
 ## Thanks to David A. James & Saikat DebRoy, the authors of RMySQL package.
@@ -12,25 +12,10 @@
 
 ##.PostgreSQLRCS <- "$Id: PostgreSQL.R,v 0.1 2008/06/10 14:00:00$"
 .PostgreSQLPkgName <- "RPostgreSQL"
-.PostgreSQLVersion <- "0.2-0"       ##package.description(.PostgreSQLPkgName, fields = "Version")
+.PostgreSQLVersion <- "0.3-0"       ##package.description(.PostgreSQLPkgName, fields = "Version")
 .PostgreSQL.NA.string <- "\\N"      ## on input, PostgreSQL interprets \N as NULL (NA)
 
 setOldClass("data.frame")      ## to appease setMethod's signature warnings...
-
-## ------------------------------------------------------------------
-## Begin DBI extensions:
-##
-## dbBeginTransaction
-##
-setGeneric("dbBeginTransaction",
-           def = function(conn, ...)
-           standardGeneric("dbBeginTransaction"),
-           valueClass = "logical"
-           )
-##
-## End DBI extensions
-## ------------------------------------------------------------------
-
 
 ##
 ## Class: DBIObject
@@ -120,7 +105,7 @@ setMethod("dbGetQuery",
 
 setMethod("dbGetException", "PostgreSQLConnection",
           def = function(conn, ...){
-              if(!isIdCurrent(conn))
+              if(!isPostgresqlIdCurrent(conn))
                   stop(paste("expired", class(conn)))
               .Call("RS_PostgreSQL_getException", as(conn, "integer"),
                     PACKAGE = .PostgreSQLPkgName)
@@ -264,9 +249,6 @@ setMethod("dbRollback", "PostgreSQLConnection",
           }
           )
 
-setMethod("dbBeginTransaction", "PostgreSQLConnection",
-          def = function(conn, ...) postgresqlTransactionStatement(conn, "BEGIN")
-          )
 
 ##
 ## Class: DBIResult
@@ -377,7 +359,7 @@ setMethod("dbDataType",
 setMethod("make.db.names",
           signature(dbObj="PostgreSQLObject", snames = "character"),
           def = function(dbObj, snames,keywords,unique, allow.keywords,...){
-              make.db.names.default(snames, keywords = .PostgreSQLKeywords,unique, allow.keywords)
+              postgresqlQuoteId(snames)
           },
           valueClass = "character"
           )
