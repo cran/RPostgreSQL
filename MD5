@@ -1,5 +1,5 @@
-261387fd2213ff4891e5215377f57304 *ChangeLog
-621ee210aae73326e24758cb1371481e *DESCRIPTION
+aac9af6888dbb9e73590669d2abf8b27 *ChangeLog
+c735d3fc6a786ac1e2b53869a40f3c9f *DESCRIPTION
 2627b2b4195d23fd892e25c925a01f93 *LICENSE
 07abd6526506cad69dacbcd85056df39 *NAMESPACE
 2d9f70685a274782a6294593052b35c9 *R/PostgreSQL.R
@@ -10,8 +10,8 @@ c2656a583e3cdce783d45843fcff2dbf *R/zzz.R
 4b5e59c53d38086590d8d8553853ab04 *cleanup
 cd97f90bb8f96381bc90618f20f92e37 *config.guess
 1909cacd8bdd9e8b01df53649a497e74 *config.sub
-3a574e3eddc22cf029d1c4835227f4e9 *configure
-477fd14f85829c063699aa9ae871cf95 *configure.in
+7e36d58ecc04dbe12cab30e652899068 *configure
+5efe73308b630ae004ec81ea9d4ee802 *configure.in
 d41d8cd98f00b204e9800998ecf8427e *configure.win
 a93eb17deebc9c9f4831891d57225b88 *inst/ANNOUNCEMENT
 955d38471d059fdf5135aa37568c05e9 *inst/NEWS
@@ -25,7 +25,7 @@ b42cfbf562a28612beb8acfe0f716c61 *inst/devTests/demo.r
 0cda913b0e5e9141de5ee02ce25bff4d *inst/devTests/timeTypeComparison.r
 5c86f87f1eb660bf799f2a6e49e75175 *inst/devTests/transactionManagement.r
 cb8f0f0ce13da24f66f2ac2422cdbc01 *inst/devTests/typeTest.r
-d64267f49f5bae8c983da408c5f8295b *inst/doc/DBI.pdf
+5fa18684f6c5b889b22098ef5bd902b7 *inst/doc/DBI.pdf
 d41d8cd98f00b204e9800998ecf8427e *install-sh
 3189110650497edadc574cf9deda2e7a *man/PostgreSQL.Rd
 34be8b01589cc63c1e2c14fc923a0296 *man/PostgreSQLConnection-class.Rd
@@ -53,7 +53,7 @@ cf55e6b7dbfc0e553833452c1e56d460 *man/make.db.names-methods.Rd
 efefe77c91468729e7f3f44d2baa9e96 *man/postgresqlDBApply.Rd
 53c37275687ec67b72eecaee8864148f *man/postgresqlSupport.Rd
 1fa83980e75922372ce35309a6d37ab7 *man/summary-methods.Rd
-dfb46290a95f007ee31c9b1629cb48c1 *src/Makevars.in
+d6e06acf69eb5a72bba126285917aeab *src/Makevars.in
 369b2e58786107e237d9b802c91e5ad2 *src/Makevars.win
 cc7a9148d6dd10737d8d920f477ecd22 *src/RS-DBI.c
 998b2d43ef87d0b5b6e5e286b1766d8f *src/RS-DBI.h
