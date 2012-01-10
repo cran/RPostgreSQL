@@ -1,5 +1,5 @@
-aac9af6888dbb9e73590669d2abf8b27 *ChangeLog
-c735d3fc6a786ac1e2b53869a40f3c9f *DESCRIPTION
+aef2d888019c9177bd90d119cf100074 *ChangeLog
+a5fdfbf118713a32d60634c36234d8ec *DESCRIPTION
 2627b2b4195d23fd892e25c925a01f93 *LICENSE
 07abd6526506cad69dacbcd85056df39 *NAMESPACE
 2d9f70685a274782a6294593052b35c9 *R/PostgreSQL.R
@@ -14,7 +14,7 @@ cd97f90bb8f96381bc90618f20f92e37 *config.guess
 5efe73308b630ae004ec81ea9d4ee802 *configure.in
 d41d8cd98f00b204e9800998ecf8427e *configure.win
 a93eb17deebc9c9f4831891d57225b88 *inst/ANNOUNCEMENT
-955d38471d059fdf5135aa37568c05e9 *inst/NEWS
+32b052e58d5822469b1f49497c824ec0 *inst/NEWS
 86063092fe732dcbc47a4830ca72703c *inst/README
 b73cbf6aae0e4d6ece79307f8a86713f *inst/THANKS
 f9bf927d77f5afe307d48292d82b935f *inst/TODO
@@ -25,7 +25,7 @@ b42cfbf562a28612beb8acfe0f716c61 *inst/devTests/demo.r
 0cda913b0e5e9141de5ee02ce25bff4d *inst/devTests/timeTypeComparison.r
 5c86f87f1eb660bf799f2a6e49e75175 *inst/devTests/transactionManagement.r
 cb8f0f0ce13da24f66f2ac2422cdbc01 *inst/devTests/typeTest.r
-5fa18684f6c5b889b22098ef5bd902b7 *inst/doc/DBI.pdf
+6c99a753f2a33515fa567d241aa18e31 *inst/doc/DBI.pdf
 d41d8cd98f00b204e9800998ecf8427e *install-sh
 3189110650497edadc574cf9deda2e7a *man/PostgreSQL.Rd
 34be8b01589cc63c1e2c14fc923a0296 *man/PostgreSQLConnection-class.Rd
@@ -54,7 +54,7 @@ efefe77c91468729e7f3f44d2baa9e96 *man/postgresqlDBApply.Rd
 53c37275687ec67b72eecaee8864148f *man/postgresqlSupport.Rd
 1fa83980e75922372ce35309a6d37ab7 *man/summary-methods.Rd
 d6e06acf69eb5a72bba126285917aeab *src/Makevars.in
-369b2e58786107e237d9b802c91e5ad2 *src/Makevars.win
+28b4fca3fd3ae85de4b1d1bb480c0837 *src/Makevars.win
 cc7a9148d6dd10737d8d920f477ecd22 *src/RS-DBI.c
 998b2d43ef87d0b5b6e5e286b1766d8f *src/RS-DBI.h
 36dbad7938bb2d8b33267b7363c8ef09 *src/RS-PQescape.c
@@ -64,16 +64,15 @@ a097d25581003eb54dba6f63338e0ad4 *src/RS-PostgreSQL.h
 6422d3349928db0c1b94509e8b1d7557 *src/RS-pgsql-getResult.c
 3029b173216fd1941bc6c9d4fbbd3249 *src/RS-pgsql-pqexec.c
 25f7757eb3ce49bd5c0faf5d38995a84 *src/S4R.h
-77057ba352b034dc40f586b1d1bc366e *src/install.libs.R
 ef344a9f1740fa86ca1465e306fc30bf *src/libpq/COPYRIGHT
 70210c09c015458c661a500f794d90cd *src/libpq/Makefile.darwin
 ad0f605aa54b56a24bad2eaff5f9e770 *src/libpq/Makefile.global.darwin
 68fccef5a928cb81f1ac95bc34d722f2 *src/libpq/Makefile.global.win32
-8f0de03c91bc82b1e1aeb7db7887615e *src/libpq/Makefile.global.win64
+5383f13063f1577be46ad2ffc0a4de93 *src/libpq/Makefile.global.win64
 27f3f61b48248452f421f708fcc383ca *src/libpq/Makefile.port
 cd612b52f4c8225182a8dbd899de2b18 *src/libpq/Makefile.port.darwin
-647192f64017e456bf5e06f3863e5b6a *src/libpq/Makefile.shlib
-47e0409e9d91e5d88113ea064cf86444 *src/libpq/Makefile.win
+41b44e9dffa16c318c046aaa40132309 *src/libpq/Makefile.shlib
+11674cf44e470a958990dbf33e7b2d21 *src/libpq/Makefile.win
 92c6d2478320dcb7596b189e1404f462 *src/libpq/README
 81fa40bc86309f5f19a5173a0691fc0e *src/libpq/bcc32.mak
 f6603683fd65a79d90fe3e5036416d98 *src/libpq/blibpqdll.def
