@@ -4,7 +4,7 @@
 /*
  * RS-DBI.h
  *
- * $Id: RS-DBI.h 189 2011-10-01 13:16:39Z dirk.eddelbuettel $
+ * $Id: RS-DBI.h 227 2012-02-27 09:58:29Z tomoakin@kenroku.kanazawa-u.ac.jp $
  *
  * This package was developed as a part of Summer of Code program organized by Google.
  * Thanks to David A. James & Saikat DebRoy, the authors of RMySQL package.
@@ -234,7 +234,7 @@ extern "C" {
     };
 
     /* return the primitive type name for a primitive type id */
-    char *RS_DBI_getTypeName(Sint typeCode, const struct data_types table[]);
+    const char *RS_DBI_getTypeName(Sint typeCode, const struct data_types table[]);
     /* same, but callable from S/R and vectorized */
     s_object *RS_DBI_SclassNames(s_object * types);
 

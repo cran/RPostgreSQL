@@ -31,6 +31,7 @@ Type 'q()' to quit R.
 + 
 +     ## try to load our module and abort if this fails
 +     stopifnot(require(RPostgreSQL))
++     stopifnot(require(datasets))
 + 
 +     ## load the PostgresSQL driver
 +     drv <- dbDriver("PostgreSQL")
@@ -44,27 +45,28 @@ Type 'q()' to quit R.
 +                      port=ifelse((p<-Sys.getenv("POSTGRES_PORT"))!="", p, 5432))
 + 
 + 
-+     #  create a table
-+     res <- dbGetQuery(con, "CREATE TABLE aa (pk integer primary key, v1 float not null, v2 float)" )
++     if (dbExistsTable(con, c("public", "rockdata"))) {
++         print("Removing rockdata\n")
++         dbRemoveTable(con, c("public", "rockdata"))
++     }
++ 
++     dbWriteTable(con, c("public", "rockdata"), rock)
 + 
 +     ## run a simple query and show the query result
-+     res <- dbGetQuery(con, "INSERT INTO aa VALUES(3, 2, NULL)" )
-+     res <- dbSendQuery(con, "select pk, v1, v2, v1+v2 from aa")
-+     cat("dbColumnInfo\n")
-+     gctorture()
-+     print(dbColumnInfo(res))
-+     print(dbColumnInfo(res))
-+     cat("SELECT result\n")
-+     df <- fetch(res, n=-1)
-+     print(df)
++     res <- dbGetQuery(con, "select * from public.rockdata limit 10")
++     print(res)
++ 
 + 
 +     ## cleanup
-+     cat("Removing \"AA\"\n")
-+     dbRemoveTable(con, "aa")
++     if (dbExistsTable(con, c("public", "rockdata"))) {
++         print("Removing rockdata\n")
++         dbRemoveTable(con, c("public", "rockdata"))
++     }
++ 
 +     ## and disconnect
 +     dbDisconnect(con)
 + }
 > 
 > proc.time()
    user  system elapsed 
-  0.127   0.016   0.132 
+  0.129   0.018   0.135 

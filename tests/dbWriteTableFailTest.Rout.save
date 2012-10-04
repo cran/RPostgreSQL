@@ -31,6 +31,7 @@ Type 'q()' to quit R.
 + 
 +     ## try to load our module and abort if this fails
 +     stopifnot(require(RPostgreSQL))
++     stopifnot(require(datasets))
 + 
 +     ## load the PostgresSQL driver
 +     drv <- dbDriver("PostgreSQL")
@@ -44,27 +45,48 @@ Type 'q()' to quit R.
 +                      port=ifelse((p<-Sys.getenv("POSTGRES_PORT"))!="", p, 5432))
 + 
 + 
-+     #  create a table
-+     res <- dbGetQuery(con, "CREATE TABLE aa (pk integer primary key, v1 float not null, v2 float)" )
++     if (dbExistsTable(con, "rockdata")) {
++         print("Removing rockdata\n")
++         dbRemoveTable(con, "rockdata")
++     }
++     cat("create incompatible table rockdata\n")
++     dbGetQuery(con, "CREATE TABLE rockdata (a int, b varchar(5))")
 + 
++     cat("write table to rockdata with append=TRUE\n")
++     try({res <-dbWriteTable(con, 'rockdata', rock, append=TRUE, overwrite=FALSE)
++         print(res)
++         if(res == FALSE){
++            cat("PASS as the return value is false\n")
++         }else{
++            cat("FAIL as the return value is true\n")
++         }
++     })
++ 
++     cat("write table to rockdata\n")
++     try({res <- dbWriteTable(con, 'rockdata', rock)
++         if(res == FALSE){
++         print(res)
++            cat("PASS as the return value is false\n")
++         }else{
++            cat("FAIL as the return value is true\n")
++         }
++     })
++   
 +     ## run a simple query and show the query result
-+     res <- dbGetQuery(con, "INSERT INTO aa VALUES(3, 2, NULL)" )
-+     res <- dbSendQuery(con, "select pk, v1, v2, v1+v2 from aa")
-+     cat("dbColumnInfo\n")
-+     gctorture()
-+     print(dbColumnInfo(res))
-+     print(dbColumnInfo(res))
-+     cat("SELECT result\n")
-+     df <- fetch(res, n=-1)
-+     print(df)
++     res <- dbGetQuery(con, "select * from rockdata limit 10")
++     print(res)
++ 
 + 
 +     ## cleanup
-+     cat("Removing \"AA\"\n")
-+     dbRemoveTable(con, "aa")
++     if (dbExistsTable(con, "rockdata")) {
++         print("Removing rockdata\n")
++         dbRemoveTable(con, "rockdata")
++     }
++ 
 +     ## and disconnect
 +     dbDisconnect(con)
 + }
 > 
 > proc.time()
    user  system elapsed 
-  0.127   0.016   0.132 
+  0.132   0.015   0.135 

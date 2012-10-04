@@ -1,12 +1,15 @@
 
-## dbWriteTable test
+## selectWhereZero test
+##
+## test for the 'Issue 1' on the Google Code issue log
+## this was reported in June and fixed by Joe Conway (svr committ r100)
 ##
 ## Assumes that
 ##  a) PostgreSQL is running, and
 ##  b) the current user can connect
 ## both of which are not viable for release but suitable while we test
 ##
-## Dirk Eddelbuettel, 10 Sep 2009
+## Dirk Eddelbuettel, 03 Oct 2009
 
 ## only run this if this env.var is set correctly
 if (Sys.getenv("POSTGRES_USER") != "" & Sys.getenv("POSTGRES_HOST") != "" & Sys.getenv("POSTGRES_DATABASE") != "") {
@@ -26,23 +29,28 @@ if (Sys.getenv("POSTGRES_USER") != "" & Sys.getenv("POSTGRES_HOST") != "" & Sys.
                      port=ifelse((p<-Sys.getenv("POSTGRES_PORT"))!="", p, 5432))
 
 
-    #  create a table
-    res <- dbGetQuery(con, "CREATE TABLE aa (pk integer primary key, v1 float not null, v2 float)" )
+    if (dbExistsTable(con, "tmpirisdata")) {
+        print("Removing tmpirisdata\n")
+        dbRemoveTable(con, "tmpirisdata")
+    }
+
 
     ## run a simple query and show the query result
-    res <- dbGetQuery(con, "INSERT INTO aa VALUES(3, 2, NULL)" )
-    res <- dbSendQuery(con, "select pk, v1, v2, v1+v2 from aa")
-    cat("dbColumnInfo\n")
-    gctorture()
-    print(dbColumnInfo(res))
-    print(dbColumnInfo(res))
-    cat("SELECT result\n")
-    df <- fetch(res, n=-1)
-    print(df)
+    res <- dbGetQuery(con, "create table tmpirisdata (ra REAL[])")
+    res <- dbSendQuery(con, "select ra from tmpirisdata")
+    print(res)
+    type <- dbColumnInfo(res)
+    print(type)
+    data <- fetch(res, -1)
+    print(data)
 
     ## cleanup
-    cat("Removing \"AA\"\n")
-    dbRemoveTable(con, "aa")
+    if (dbExistsTable(con, "tmpirisdata")) {
+        print("Removing tmpirisdata\n")
+        dbRemoveTable(con, "tmpirisdata")
+    }
+
     ## and disconnect
     dbDisconnect(con)
+    cat("PASS:  reached to the end of the test code without segmentation fault\n")
 }

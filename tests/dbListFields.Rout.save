@@ -16,15 +16,13 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
-> 
-> ## dbWriteTable test
+> ## dbListFields test
 > ##
 > ## Assumes that
 > ##  a) PostgreSQL is running, and
 > ##  b) the current user can connect
 > ## both of which are not viable for release but suitable while we test
 > ##
-> ## Dirk Eddelbuettel, 10 Sep 2009
 > 
 > ## only run this if this env.var is set correctly
 > if (Sys.getenv("POSTGRES_USER") != "" & Sys.getenv("POSTGRES_HOST") != "" & Sys.getenv("POSTGRES_DATABASE") != "") {
@@ -45,26 +43,37 @@ Type 'q()' to quit R.
 + 
 + 
 +     #  create a table
-+     res <- dbGetQuery(con, "CREATE TABLE aa (pk integer primary key, v1 float not null, v2 float)" )
++     res <- dbGetQuery(con, "CREATE SCHEMA testschema")
++     res <- dbGetQuery(con, "CREATE TABLE testschema.aa (pid integer, name text)")
++     res <- dbGetQuery(con, "CREATE TABLE aa (pk integer, v1 float not null, v2 float)" )
 + 
 +     ## run a simple query and show the query result
-+     res <- dbGetQuery(con, "INSERT INTO aa VALUES(3, 2, NULL)" )
-+     res <- dbSendQuery(con, "select pk, v1, v2, v1+v2 from aa")
-+     cat("dbColumnInfo\n")
-+     gctorture()
-+     print(dbColumnInfo(res))
-+     print(dbColumnInfo(res))
-+     cat("SELECT result\n")
-+     df <- fetch(res, n=-1)
++     df <- dbListFields(con, "aa")
 +     print(df)
++     if (length(df) == 3){
++       cat("PASS: 3 fields returned\n")
++     }else{
++       cat(paste("FAIL:", length(df), "fields returned\n"))
++     } 
++ 
++     df <- dbListFields(con, c("testschema", "aa"))
++     print(df)
++     if (length(df) == 2){
++       cat("PASS: 2 fields returned\n")
++     }else{
++       cat(paste("FAIL:", length(df), "fields returned\n"))
++     } 
++ 
 + 
 +     ## cleanup
 +     cat("Removing \"AA\"\n")
 +     dbRemoveTable(con, "aa")
++     dbGetQuery(con, "DROP TABLE testschema.aa")
++     dbGetQuery(con, "DROP SCHEMA testschema")
 +     ## and disconnect
 +     dbDisconnect(con)
 + }
 > 
 > proc.time()
    user  system elapsed 
-  0.127   0.016   0.132 
+  0.141   0.019   0.149 

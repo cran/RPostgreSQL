@@ -1,7 +1,7 @@
 /*
  *    RS-pgsql-copy.c
  *
- *    $Id: RS-pgsql-getResult.c 190 2011-10-01 14:27:35Z dirk.eddelbuettel $
+ *    $Id: RS-pgsql-getResult.c 237 2012-10-04 14:54:29Z tomoakin@kenroku.kanazawa-u.ac.jp $
  */
 
 #include "RS-PostgreSQL.h"
@@ -11,14 +11,24 @@
    which is used in conjunction with COPY table from STDIN */
 
 /*
- * Copies all content of the file specified with filename to the conHandle which
- * has opened connection previously issued the COPY table from STDIN query
- * the data is read from file sent to the database with PQputCopyData
- * in chunks of COPY_IN_BUFSIZE.
+ * RS_PostgreSQL_CopyIn copies all content of the file specified with filename 
+ * to the conHandle which has opened connection previously issued the COPY 
+ * table from STDIN query the data is read from file sent to the database with
+ * PQputCopyData in chunks of COPY_IN_BUFSIZE.
  * The copy ends when 0 byte could be read from the file and then the
  * PQputCopyEnd is called to complete the copying.
  */
 
+
+/*
+ * RS_PostgreSQL_getResult is the implementation of postgresqlgetResult()
+ *
+ * RS_PostgreSQL_getResult will be called after CopyIn
+ * for cheching the result of CopyIn
+ *
+ *     postgresqlCopyInDataframe(new.con, value)
+ *     rs<-postgresqlgetResult(new.con)
+ */
 
 s_object *
 RS_PostgreSQL_getResult(Con_Handle * conHandle)
@@ -68,13 +78,14 @@ RS_PostgreSQL_getResult(Con_Handle * conHandle)
     }
 
     /* we now create the wrapper and copy values */
-    rsHandle = RS_DBI_allocResultSet(conHandle);
+    PROTECT(rsHandle = RS_DBI_allocResultSet(conHandle));
     result = RS_DBI_getResultSet(rsHandle);
     result->drvResultSet = (void *) my_result;
     result->rowCount = (Sint) 0;
     result->isSelect = 0;
     result->rowsAffected = 0;
     result->completed = 1;
+    UNPROTECT(1);
     return rsHandle;
 }
 
