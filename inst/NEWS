@@ -1,3 +1,13 @@
+Version 0.4 -- 2013-03-27
+
+    o   Initial implementation of prepared statement
+
+    o   Use system libpq library when available on OS X (darwin)
+
+    o   Force ISO datestyle for PostgreSQL-R communication by default
+
+    o   Time zone aware Timestamp POSIXct conversion
+
 Version 0.3-3 -- 2012-10-05
 
     o   Bugfix on dbColumnInfo and others reproducible by gctorture(TRUE)

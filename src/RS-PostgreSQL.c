@@ -1,7 +1,7 @@
 /*
  * RS-PostgreSQL.c
  *
- * $Id: RS-PostgreSQL.c 237 2012-10-04 14:54:29Z tomoakin@kenroku.kanazawa-u.ac.jp $
+ * $Id: RS-PostgreSQL.c 245 2012-12-19 13:06:53Z tomoakin@kenroku.kanazawa-u.ac.jp $
  *
  * This package was developed as a part of Summer of Code program organized by Google.
  * Thanks to David A. James & Saikat DebRoy, the authors of RMySQL package.
@@ -443,7 +443,7 @@ RS_PostgreSQL_createDataMappings(Res_Handle * rsHandle)
     con = RS_DBI_getConnection(rsHandle);
     num_fields = PQnfields(my_result);
 
-    flds = RS_DBI_allocFields(num_fields);
+    PROTECT(flds = RS_DBI_allocFields(num_fields));
 
     char buff[1000];            /* Buffer to hold the sql query to check whether the given column is nullable */
     PGconn *conn;
@@ -576,6 +576,7 @@ RS_PostgreSQL_createDataMappings(Res_Handle * rsHandle)
             break;
         }
     }
+    UNPROTECT(1);
     return flds;
 }
 
@@ -587,13 +588,8 @@ RS_PostgreSQL_fetch(s_object * rsHandle, s_object * max_rec)
     RS_DBI_fields *flds;
     PGresult *my_result;
     s_object *output, *s_tmp;
-#ifndef USING_R
-    s_object *raw_obj, *raw_container;
-#endif
-    /* unsigned long  *lens;  */
     int i, j, null_item, expand;
     Sint completed;
-    /* Sint * fld_nullOk set but not used */
     Stype *fld_Sclass;
     Sint num_rec;
     int num_fields;
@@ -620,8 +616,6 @@ RS_PostgreSQL_fetch(s_object * rsHandle, s_object * max_rec)
     MEM_PROTECT(output = NEW_LIST((Sint) num_fields));
     RS_DBI_allocOutput(output, flds, num_rec, 0);
     fld_Sclass = flds->Sclass;
-/*    fld_nullOk = flds->nullOk; set but not used */
-
     /* actual fetching.... */
     my_result = (PGresult *) result->drvResultSet;
 
@@ -700,11 +694,7 @@ RS_PostgreSQL_fetch(s_object * rsHandle, s_object * max_rec)
 
             case CHARACTER_TYPE:
                 if (null_item) {
-#ifdef USING_R
                     SET_LST_CHR_EL(output, j, i, NA_STRING);
-#else
-                    NA_CHR_SET(LST_CHR_EL(output, j, i));
-#endif
                 }
                 else {
                     SET_LST_CHR_EL(output, j, i, C_S_CPY(PQgetvalue(my_result, k, j)));
@@ -720,31 +710,9 @@ RS_PostgreSQL_fetch(s_object * rsHandle, s_object * max_rec)
                 }
                 break;
 
-#ifndef USING_R
-            case SINGLE_TYPE:
-                if (null_item) {
-                    NA_SET(&(LST_FLT_EL(output, j, i)), SINGLE_TYPE);
-                }
-                else {
-                    LST_FLT_EL(output, j, i) = (float) atof(PQgetvalue(my_result, k, j));
-                }
-                break;
-
-            case RAW_TYPE:     /* these are blob's */
-                raw_obj = NEW_RAW((Sint) PQgetlength(my_result, k, j));
-                memcpy(RAW_DATA(raw_obj), PQgetvalue(my_result, k, j), PQgetlength(my_result, k, j));
-                raw_container = LST_EL(output, j);
-                SET_ELEMENT(raw_container, (Sint) i, raw_obj);
-                SET_ELEMENT(output, (Sint) j, raw_container);
-                break;
-#endif
             default:
                 if (null_item) {
-#ifdef USING_R
                     SET_LST_CHR_EL(output, j, i, NA_STRING);
-#else
-                    NA_CHR_SET(LST_CHR_EL(output, j, i));
-#endif
                 }
                 else {
                     char warn[64];
@@ -899,54 +867,44 @@ RS_PostgreSQL_connectionInfo(Con_Handle * conHandle)
     RS_PostgreSQL_conParams *conParams;
     RS_DBI_connection *con;
     s_object *output;
-    Sint i, n = 7 /*8 */ , *res, nres;
-    char *conDesc[] = { "host", "user", "dbname",
+    Sint i, n = 8, *res, nres;
+    int sv, major, minor_revision, minor, revision_num;
+    char *conDesc[] = { "host", "port", "user", "dbname",
         "serverVersion", "protocolVersion",
         "backendPId", "rsId"
     };
     Stype conType[] = { CHARACTER_TYPE, CHARACTER_TYPE, CHARACTER_TYPE,
-        /* CHARACTER_TYPE, */ CHARACTER_TYPE, INTEGER_TYPE,
+        CHARACTER_TYPE, CHARACTER_TYPE, INTEGER_TYPE,
         INTEGER_TYPE, INTEGER_TYPE
     };
-    Sint conLen[] = { 1, 1, 1 /*, 1 */ , 1, 1, 1, 1 };
+    Sint conLen[] = { 1, 1, 1, 1, 1, 1, 1, -1 };
 
     con = RS_DBI_getConnection(conHandle);
-    conLen[6 /*7 */ ] = con->num_res;   /* num of open resultSets */
-    my_con = (PGconn *) con->drvConnection;
+    conLen[7] = con->num_res;   
     PROTECT(output = RS_DBI_createNamedList(conDesc, conType, conLen, n));
     conParams = (RS_PostgreSQL_conParams *) con->conParams;
 
     SET_LST_CHR_EL(output, 0, 0, C_S_CPY(conParams->host));
-    SET_LST_CHR_EL(output, 1, 0, C_S_CPY(conParams->user));
-    SET_LST_CHR_EL(output, 2, 0, C_S_CPY(conParams->dbname));
+    SET_LST_CHR_EL(output, 1, 0, C_S_CPY(conParams->port));
+    SET_LST_CHR_EL(output, 2, 0, C_S_CPY(conParams->user));
+    SET_LST_CHR_EL(output, 3, 0, C_S_CPY(conParams->dbname));
 
-    /* PQserverVersion: Returns an integer representing the backend version.
-     * Syntax: int PQserverVersion(const PGconn *conn);
-     */
-    /*Long int is taken because in some Operating sys int is 2 bytes which will not be enough for     * server version number
-     */
-    long int sv = PQserverVersion(my_con);
+    my_con = (PGconn *) con->drvConnection;
+    sv = PQserverVersion(my_con);
 
-    int major = (int) sv / 10000;
-    int minor = (int) (sv % 10000) / 100;
-    int revision_num = (int) (sv % 10000) % 100;
+    major = sv / 10000;
+    minor_revision = sv % 10000;
+    minor = minor_revision / 100;
+    revision_num = minor_revision % 100;
 
-    char buf1[50];
+    {
+        char buf1[50];
+        sprintf(buf1, "%d.%d.%d", major, minor, revision_num);
+        SET_LST_CHR_EL(output, 4, 0, C_S_CPY(buf1));
+    }
 
-    sprintf(buf1, "%d.%d.%d", major, minor, revision_num);
-
-    SET_LST_CHR_EL(output, 3, 0, C_S_CPY(buf1));
-
-    /* PQprotocolVersion: Interrogates the frontend/backend protocol being used.
-     * int PQprotocolVersion(const PGconn *conn);
-     */
-    LST_INT_EL(output, 4 /*5 */ , 0) = (Sint) PQprotocolVersion(my_con);
-
-    /* PQbackendPID: Returns the process ID (PID) of the backend server process handling     * this connection.
-     * Syntax: int PQbackendPID(const PGconn *conn);
-     */
-
-    LST_INT_EL(output, 5 /*6 */ , 0) = (Sint) PQbackendPID(my_con);
+    LST_INT_EL(output, 5, 0) = (Sint) PQprotocolVersion(my_con);
+    LST_INT_EL(output, 6, 0) = (Sint) PQbackendPID(my_con);
 
     res = (Sint *) S_alloc((long) con->length, (int) sizeof(Sint));
     nres = RS_DBI_listEntries(con->resultSetIds, con->length, res);
@@ -955,7 +913,7 @@ RS_PostgreSQL_connectionInfo(Con_Handle * conHandle)
     }
 
     for (i = 0; i < con->num_res; i++) {
-        LST_INT_EL(output, 6, i) = (Sint) res[i];
+        LST_INT_EL(output, 7, i) = (Sint) res[i];
     }
     UNPROTECT(1);
     return output;

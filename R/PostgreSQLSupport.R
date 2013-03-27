@@ -1,6 +1,6 @@
 
 ## PostgreSQLSupport.R
-## $Id: PostgreSQLSupport.R 230 2012-03-29 07:34:49Z tomoakin@kenroku.kanazawa-u.ac.jp $
+## $Id: PostgreSQLSupport.R 243 2012-12-06 14:26:41Z tomoakin@kenroku.kanazawa-u.ac.jp $
 
 ## This package was developed as a part of Summer of Code program organized by Google.
 ## Thanks to David A. James & Saikat DebRoy, the authors of RMySQL package.
@@ -78,7 +78,7 @@ postgresqlDriverInfo <- function(obj, what="", ...) {
 ## while NULL means "no database".
 postgresqlNewConnection <- function(drv, user = "", password = "",
                                     host = "", dbname = "",
-                                    port = "", tty = "", options = "") {
+                                    port = "", tty = "", options = "", forceISOdate=TRUE) {
     if(!isPostgresqlIdCurrent(drv))
         stop("expired manager")
     if(is.null(user))
@@ -98,7 +98,11 @@ postgresqlNewConnection <- function(drv, user = "", password = "",
 
     drvId <- as(drv, "integer")
     conId <- .Call("RS_PostgreSQL_newConnection", drvId, con.params, PACKAGE = .PostgreSQLPkgName)
-    new("PostgreSQLConnection", Id = conId)
+    con <- new("PostgreSQLConnection", Id = conId)
+    if(forceISOdate){
+      dbGetQuery(con, "set datestyle to ISO")      
+    }
+    con
 }
 
 postgresqlCloneConnection <- function(con, ...) {
@@ -187,12 +191,16 @@ postgresqlTransactionStatement <- function(con, statement) {
 ## dbResult object if the SQL operation does not produce
 ## output, otherwise it produces a resultSet that can
 ## be used for fetching rows.
-postgresqlExecStatement <- function(con, statement) {
+postgresqlExecStatement <- function(con, statement, params, ...) {
     if(!isPostgresqlIdCurrent(con))
         stop(paste("expired", class(con)))
     conId <- as(con, "integer")
     statement <- as(statement, "character")
-    rsId <- .Call("RS_PostgreSQL_exec", conId, statement, PACKAGE = .PostgreSQLPkgName)
+    if(missing(params)){
+        rsId <- .Call("RS_PostgreSQL_exec", conId, statement, PACKAGE = .PostgreSQLPkgName)
+    }else{
+        rsId <- .External("RS_PostgreSQL_pqexecparams", conId, statement, as(params, "character"), ..., PACKAGE = .PostgreSQLPkgName)
+    }
     new("PostgreSQLResult", Id = rsId)
 }
 
@@ -210,6 +218,14 @@ postgresqlpqExec <- function(con, statement) {
     statement <- as(statement, "character")
     .Call("RS_PostgreSQL_pqexec", conId, statement, PACKAGE = .PostgreSQLPkgName)
 }
+postgresqlpqExecParams <- function(con, statement, ...) {
+    if(!isPostgresqlIdCurrent(con))
+        stop(paste("expired", class(con)))
+    conId <- as(con, "integer")
+    statement <- as(statement, "character")
+    .External("RS_PostgreSQL_pqexecparams", conId, statement, ..., PACKAGE = .PostgreSQLPkgName)
+}
+
 postgresqlCopyIn <- function(con, filename) {
     if(!isPostgresqlIdCurrent(con))
         stop(paste("expired", class(con)))
@@ -236,14 +252,14 @@ postgresqlgetResult <- function(con) {
 
 ## helper function: it exec's *and* retrieves a statement. It should
 ## be named somehting else.
-postgresqlQuickSQL <- function(con, statement) {
+postgresqlQuickSQL <- function(con, statement, ...) {
     if(!isPostgresqlIdCurrent(con))
         stop(paste("expired", class(con)))
     rsList <- dbListResults(con)
     if (length(rsList)>0){  # clear results
         dbClearResult(rsList[[1]])
     }
-    rs <- try(dbSendQuery(con, statement))
+    rs <- try(dbSendQuery(con, statement, ...))
     if (inherits(rs, ErrorClass)){
         warning("Could not create execute", statement)
         return(NULL)
@@ -411,21 +427,14 @@ postgresqlFetch <- function(res, n=0, ...) {
 
     flds <- dbGetInfo(res)$fieldDescription[[1]]$type
     for(i in 1:length(flds)) {
-
-        ## Note: All the Date-Time datatypes in pg except date and TimeStamp were mapped to character
-
         if(flds[[i]] == 1114) {  ## 1114 corresponds to Timestamp without TZ (mapped to POSIXct class)
             rel[,i] <- as.POSIXct(rel[,i])
         } else if(flds[[i]] == 1082) {  ## 1082 corresponds to Date (mapped to Date class)
             rel[,i] <- as.Date(rel[,i])
         } else if(flds[[i]] == 1184)  {  ## 1184 corresponds to Timestamp with TimeZone
-            ## TODO: Details about time zone has been dropped.
-            ## Will try do improve it in the future
-            #rel[,i] <- as.POSIXct(rel[,i],"%Y-%m-%d %H:%M:%S")  # second arg. is tz, so this was wrong
-            rel[,i] <- as.POSIXct(rel[,i])
+            rel[,i] <- as.POSIXct(sub('([+-]..)$', '\\100', sub(':(..)$','\\1' ,rel[,i])), format="%Y-%m-%d %H:%M:%OS%z")
         }
     }
-
     rel
 }
 

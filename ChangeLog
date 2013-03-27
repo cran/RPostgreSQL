@@ -1,3 +1,33 @@
+2013-03-27  Tomoaki NISHIYAMA  <tomoakin@staff.kanazawa-u.ac.jp>
+
+	Document synchronization and testoutputs.
+
+	* man/postgresqlSupport.Rd
+
+2013-03-27  Tomoaki NISHIYAMA  <tomoakin@staff.kanazawa-u.ac.jp>
+
+	Change notation of LICENSE in DESCRIPTION upon request from CRAN
+
+	* LICENSE
+	* inst/NEWS
+	* inst/ANNOUNCEMENTS
+	* inst/TODO
+
+2013-03-27  Tomoaki NISHIYAMA  <tomoakin@staff.kanazawa-u.ac.jp>
+
+	Use system libpq library when available on OS X (darwin)
+
+	* src/configure.in
+	* src/configure
+
+2012-12-06  Tomoaki NISHIYAMA  <tomoakin@staff.kanazawa-u.ac.jp>
+
+	Test implementation of SQL with parameters.
+
+	* R/PostgreSQLSupport.R
+	* src/RS-pgsql-pqexecparams.c
+	* tests/dbGetQueryParams.R
+
 2012-10-04  Tomoaki NISHIYAMA  <tomoakin@staff.kanazawa-u.ac.jp>
 
 	Bug fix for GC related errro as reported as issue 42.
@@ -19,7 +49,6 @@
 	* configure
 	* configure.in
 
-	
 2012-04-06  Tomoaki NISHIYAMA  <tomoakin@staff.kanazawa-u.ac.jp>
 
 	For issue 39: use a single equal sign (=) in test string comparison

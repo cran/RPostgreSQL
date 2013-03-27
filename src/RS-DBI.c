@@ -1,7 +1,7 @@
 /*
  * RS-DBI.c
  *
- * $Id: RS-DBI.c 237 2012-10-04 14:54:29Z tomoakin@kenroku.kanazawa-u.ac.jp $
+ * $Id: RS-DBI.c 245 2012-12-19 13:06:53Z tomoakin@kenroku.kanazawa-u.ac.jp $
  *
  * This package was developed as a part of Summer of Code program organized by Google.
  * Thanks to David A. James & Saikat DebRoy, the authors of RMySQL package.
@@ -45,7 +45,7 @@ RS_DBI_allocManager(const char *drvName, Sint max_con, Sint fetch_default_rec, S
     Sint mgr_id = (Sint) getpid();
     int i;
 
-    mgrHandle = RS_DBI_asMgrHandle(mgr_id);
+    PROTECT(mgrHandle = RS_DBI_asMgrHandle(mgr_id));
 
     if (!dbManager) {           /* alloc for the first time */
         counter = 0;            /* connections handled so far */
@@ -54,6 +54,7 @@ RS_DBI_allocManager(const char *drvName, Sint max_con, Sint fetch_default_rec, S
     else {                      /* we're re-entering */
         if (dbManager->connections) {   /* and mgr is valid */
             if (!force_realloc) {
+                UNPROTECT(1);
                 return mgrHandle;
             }
             else {
@@ -93,7 +94,7 @@ RS_DBI_allocManager(const char *drvName, Sint max_con, Sint fetch_default_rec, S
     }
 
     dbManager = mgr;
-
+    UNPROTECT(1);
     return mgrHandle;
 }
 
@@ -522,7 +523,7 @@ RS_DBI_allocOutput(s_object * output, RS_DBI_fields * flds, Sint num_rec, Sint e
             break;
 #endif
         default:
-            RS_DBI_errorMessage("unsupported data type", RS_DBI_ERROR);
+            RS_DBI_errorMessage("unsupported data type in allocOutput", RS_DBI_ERROR);
         }
     }
 
@@ -728,7 +729,11 @@ RS_DBI_createNamedList(char **names, Stype * types, Sint * lengths, Sint n)
             break;
 #endif
         default:
-            RS_DBI_errorMessage("unsupported data type", RS_DBI_ERROR);
+            {
+                char msg[256];
+                sprintf(msg,"unsupported data type in createNamedList: %i in list %i (%s)", types[j], j, names[j]);
+                RS_DBI_errorMessage(msg, RS_DBI_ERROR);
+            }
         }
         SET_ELEMENT(output, (Sint) j, obj);
         SET_CHR_EL(output_names, j, C_S_CPY(names[j]));
@@ -1029,33 +1034,32 @@ RS_DBI_connectionInfo(Con_Handle * conHandle)
     S_EVALUATOR RS_DBI_connection *con;
     s_object *output;
     Sint i;
-    Sint n = (Sint) 7;          /* NOTE: changed from 8 to 7 ---sameer */
-    char *conDesc[] = { "host", "user", "dbname" /*, "conType" */ ,     /*NOTE: conType removed & subsequent changes made below */
+    Sint n = (Sint) 8;
+    char *conDesc[] = { "host", "port", "user", "dbname" 
         "serverVersion", "protocolVersion",
         "threadId", "rsHandle"
     };
     Stype conType[] = { CHARACTER_TYPE, CHARACTER_TYPE, CHARACTER_TYPE,
-        /*CHARACTER_TYPE, */ CHARACTER_TYPE, INTEGER_TYPE,
+        CHARACTER_TYPE,  CHARACTER_TYPE, INTEGER_TYPE,
         INTEGER_TYPE, INTEGER_TYPE
     };
-    Sint conLen[] = { 1, 1, 1, /* 1, */ 1, 1, 1, -1 };
+    Sint conLen[] = { 1, 1, 1, 1, 1, 1, 1, -1 };
 
     con = RS_DBI_getConnection(conHandle);
-    conLen[6] = con->num_res;   /* number of resultSets opened *//* NOTE: changed from 7 to 6 */
+    conLen[7] = con->num_res; 
 
     PROTECT(output = RS_DBI_createNamedList(conDesc, conType, conLen, n));
     /* dummy */
     SET_LST_CHR_EL(output, 0, 0, C_S_CPY("NA"));        /* host */
-    SET_LST_CHR_EL(output, 1, 0, C_S_CPY("NA"));        /* dbname */
-    SET_LST_CHR_EL(output, 2, 0, C_S_CPY("NA"));        /* user */
-    /*NOTE: REMOVED..... SET_LST_CHR_EL(output,3,0,C_S_CPY("NA"));     changes made below accordingly *//* conType */
-    SET_LST_CHR_EL(output, 3, 0, C_S_CPY("NA"));        /* serverVersion */
-
-    LST_INT_EL(output, 4, 0) = (Sint) - 1;      /* protocolVersion */
-    LST_INT_EL(output, 5, 0) = (Sint) - 1;      /* threadId */
+    SET_LST_CHR_EL(output, 1, 0, C_S_CPY("NA"));        /* port */
+    SET_LST_CHR_EL(output, 2, 0, C_S_CPY("NA"));        /* dbname */
+    SET_LST_CHR_EL(output, 3, 0, C_S_CPY("NA"));        /* user */
+    SET_LST_CHR_EL(output, 4, 0, C_S_CPY("NA"));        /* serverVersion */
+    LST_INT_EL(output, 5, 0) = (Sint) - 1;      /* protocolVersion */
+    LST_INT_EL(output, 6, 0) = (Sint) - 1;      /* threadId */
 
     for (i = 0; i < con->num_res; i++) {
-        LST_INT_EL(output, 6, (Sint) i) = con->resultSetIds[i];
+        LST_INT_EL(output, 7, (Sint) i) = con->resultSetIds[i];
     }
     UNPROTECT(1);
     return output;
