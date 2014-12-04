@@ -36,6 +36,10 @@
  }
 \item{options}{Command-line options to be sent to the server
  }
+\item{service}{The service being used, per ~/.pg_service.conf or similar.  This is taken from $PGSERVICE if it is set.
+ }
+\item{sslmode}{Under what circumstances to use SSL to connect to the database.
+ }
 \item{forceISOdate}{logical if the communication of date (time stamp) from PostgreSQL is forced to ISO style at conection.
  }
 }
