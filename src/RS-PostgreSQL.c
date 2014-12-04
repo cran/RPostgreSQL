@@ -241,11 +241,22 @@ RS_PostgreSQL_newConnection(Mgr_Handle * mgrHandle, s_object * con_params)
     keywords[9] = NULL;
     values[9] = NULL;
 
-    my_connection = PQconnectdbParams(keywords, values, true);
+    my_connection = PQconnectdbParams(keywords, values, 0);
 
     if (PQstatus(my_connection) != CONNECTION_OK) {
-        char buf[1000];
-	sprintf(buf, "could not connect %s@%s on dbname \"%s\"\n", PQuser(my_connection), host?host:"local", PQdb(my_connection));
+        char buf[4096];
+		/*
+        char params[3072];
+		int i;
+		for (i = 0; i < PARAMS_ARRAY_SIZE; i++)
+		{
+			strcat(params, keywords[i]);
+			strcat(params, ": ");
+			strcat(params, values[i]);
+			strcat(params, "\n");
+		}
+		*/
+	sprintf(buf, "could not connect %s@%s on dbname \"%s\"\n", PQuser(my_connection), values[2]?values[2]:"local", PQdb(my_connection));
         RS_DBI_errorMessage(buf, RS_DBI_ERROR);
     }
 
