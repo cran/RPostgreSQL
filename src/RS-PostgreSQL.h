@@ -38,6 +38,8 @@ extern "C" {
         char *port;
         char *tty;
         char *options;
+        char *service;
+        char *sslmode;
     } RS_PostgreSQL_conParams;
 
     RS_PostgreSQL_conParams *RS_PostgreSQL_allocConParams(void);
