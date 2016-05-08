@@ -1,5 +1,5 @@
 3f7fa2f8347ec616473e2918c825c4a8 *ChangeLog
-bf3109a70c05f48325af4218823659cd *DESCRIPTION
+eb0e999a8abd29c0ac2d5935ba53e298 *DESCRIPTION
 c8af6d9e6bc5bf68e12a361ef92d8ed2 *LICENSE
 07abd6526506cad69dacbcd85056df39 *NAMESPACE
 2d9f70685a274782a6294593052b35c9 *R/PostgreSQL.R
@@ -73,7 +73,7 @@ ad0f605aa54b56a24bad2eaff5f9e770 *src/libpq/Makefile.global.darwin
 27f3f61b48248452f421f708fcc383ca *src/libpq/Makefile.port
 cd612b52f4c8225182a8dbd899de2b18 *src/libpq/Makefile.port.darwin
 41b44e9dffa16c318c046aaa40132309 *src/libpq/Makefile.shlib
-11674cf44e470a958990dbf33e7b2d21 *src/libpq/Makefile.win
+7169cd2bc996ffb509ae33d1b31f6c91 *src/libpq/Makefile.win
 92c6d2478320dcb7596b189e1404f462 *src/libpq/README
 81fa40bc86309f5f19a5173a0691fc0e *src/libpq/bcc32.mak
 f6603683fd65a79d90fe3e5036416d98 *src/libpq/blibpqdll.def
