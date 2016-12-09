@@ -132,11 +132,11 @@ RS_PostgreSQL_cloneConnection(Con_Handle * conHandle)
     mgrHandle = RS_DBI_asMgrHandle(MGR_ID(conHandle));
 
 
-    /* Connection parameters need to be put into a 8-element character
+    /* Connection parameters need to be put into a 10-element character
      * vector to be passed to the RS_PostgreSQL_newConnection() function.
      */
 
-    MEM_PROTECT(con_params = NEW_CHARACTER((Sint) 7));
+    MEM_PROTECT(con_params = NEW_CHARACTER((Sint) 9));
     SET_CHR_EL(con_params, 0, C_S_CPY(conParams->user));
     SET_CHR_EL(con_params, 1, C_S_CPY(conParams->password));
     SET_CHR_EL(con_params, 2, C_S_CPY(conParams->host));
@@ -144,6 +144,8 @@ RS_PostgreSQL_cloneConnection(Con_Handle * conHandle)
     SET_CHR_EL(con_params, 4, C_S_CPY(conParams->port));
     SET_CHR_EL(con_params, 5, C_S_CPY(conParams->tty));
     SET_CHR_EL(con_params, 6, C_S_CPY(conParams->options));
+    SET_CHR_EL(con_params, 7, C_S_CPY(conParams->service));
+    SET_CHR_EL(con_params, 8, C_S_CPY(conParams->sslmode));
 
     MEM_UNPROTECT(1);
 
@@ -191,6 +193,12 @@ RS_PostgreSQL_freeConParams(RS_PostgreSQL_conParams * conParams)
     if (conParams->options) {
         free(conParams->options);
     }
+    if (conParams->service) {
+        free(conParams->service);
+    }
+    if (conParams->sslmode) {
+        free(conParams->sslmode);
+    }
 
     free(conParams);
     return;
@@ -204,42 +212,51 @@ RS_PostgreSQL_newConnection(Mgr_Handle * mgrHandle, s_object * con_params)
     RS_PostgreSQL_conParams *conParams;
     Con_Handle *conHandle;
     PGconn *my_connection;
-
-    char *user = NULL, *password = NULL, *host = NULL, *dbname = NULL, *port = NULL, *tty = NULL, *options = NULL;
+#define PARAMS_ARRAY_SIZE	10
+	const char *keywords[PARAMS_ARRAY_SIZE];
+	const char *values[PARAMS_ARRAY_SIZE];
 
     if (!is_validHandle(mgrHandle, MGR_HANDLE_TYPE)) {
         RS_DBI_errorMessage("invalid PostgreSQLManager", RS_DBI_ERROR);
     }
 
-#define IS_EMPTY(s1)   !strcmp((s1), "")
+    keywords[0] = "user";
+    values[0] = (char *) CHR_EL(con_params, 0);
+    keywords[1] = "password";
+    values[1] = (char *) CHR_EL(con_params, 1);
+    keywords[2] = "host";
+    values[2] = (char *) CHR_EL(con_params, 2);
+    keywords[3] = "dbname";
+    values[3] = (char *) CHR_EL(con_params, 3);
+    keywords[4] = "port";
+    values[4] = (char *) CHR_EL(con_params, 4);
+    keywords[5] = "tty";
+    values[5] = (char *) CHR_EL(con_params, 5);
+    keywords[6] = "options";
+    values[6] = (char *) CHR_EL(con_params, 6);
+    keywords[7] = "service";
+    values[7] = (char *) CHR_EL(con_params, 7);
+    keywords[8] = "sslmode";
+    values[8] = (char *) CHR_EL(con_params, 8);
+    keywords[9] = NULL;
+    values[9] = NULL;
 
-    if (!IS_EMPTY(CHR_EL(con_params, 0))) {
-        user = (char *) CHR_EL(con_params, 0);
-    }
-    if (!IS_EMPTY(CHR_EL(con_params, 1))) {
-        password = (char *) CHR_EL(con_params, 1);
-    }
-    if (!IS_EMPTY(CHR_EL(con_params, 2))) {
-        host = (char *) CHR_EL(con_params, 2);
-    }
-    if (!IS_EMPTY(CHR_EL(con_params, 3))) {
-        dbname = (char *) CHR_EL(con_params, 3);
-    }
-    if (!IS_EMPTY(CHR_EL(con_params, 4))) {
-        port = (char *) CHR_EL(con_params, 4);
-    }
-    if (!IS_EMPTY(CHR_EL(con_params, 5))) {
-        tty = (char *) CHR_EL(con_params, 5);
-    }
-    if (!IS_EMPTY(CHR_EL(con_params, 6))) {
-        options = (char *) CHR_EL(con_params, 6);
-    }
-
-    my_connection = PQsetdbLogin(host, port, options, tty, dbname, user, password);
+    my_connection = PQconnectdbParams(keywords, values, 0);
 
     if (PQstatus(my_connection) != CONNECTION_OK) {
-        char buf[1000];
-	sprintf(buf, "could not connect %s@%s on dbname \"%s\"\n", PQuser(my_connection), host?host:"local", PQdb(my_connection));
+        char buf[4096];
+		/*
+        char params[3072];
+		int i;
+		for (i = 0; i < PARAMS_ARRAY_SIZE; i++)
+		{
+			strcat(params, keywords[i]);
+			strcat(params, ": ");
+			strcat(params, values[i]);
+			strcat(params, "\n");
+		}
+		*/
+	sprintf(buf, "could not connect %s@%s on dbname \"%s\"\n", PQuser(my_connection), values[2]?values[2]:"local", PQdb(my_connection));
         RS_DBI_errorMessage(buf, RS_DBI_ERROR);
     }
 
@@ -260,6 +277,8 @@ RS_PostgreSQL_newConnection(Mgr_Handle * mgrHandle, s_object * con_params)
     conParams->port = RS_DBI_copyString(PQport(my_connection));
     conParams->tty = RS_DBI_copyString(PQtty(my_connection));
     conParams->options = RS_DBI_copyString(PQoptions(my_connection));
+    conParams->service = RS_DBI_copyString(PQoptions(my_connection));
+    conParams->sslmode = RS_DBI_copyString(PQoptions(my_connection));
 
     PROTECT(conHandle = RS_DBI_allocConnection(mgrHandle, (Sint) 1)); /* The second argument (1) specifies the number of result sets allocated */
     con = RS_DBI_getConnection(conHandle);
