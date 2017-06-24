@@ -1,8 +1,7 @@
 
-R version 2.15.2 (2012-10-26) -- "Trick or Treat"
-Copyright (C) 2012 The R Foundation for Statistical Computing
-ISBN 3-900051-07-0
-Platform: x86_64-unknown-linux-gnu (64-bit)
+R version 3.3.1 (2016-06-21) -- "Bug in Your Hair"
+Copyright (C) 2016 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -72,7 +71,18 @@ Type 'q()' to quit R.
 +     dbDisconnect(con)
 +     cat("PASS:  reached to the end of the test code without segmentation fault\n")
 + }
+Loading required package: RPostgreSQL
+Loading required package: DBI
+<PostgreSQLResult>
+  name    Sclass    type len precision scale nullOK
+1   ra character UNKNOWN  -1        -1    -1   TRUE
+data frame with 0 columns and 0 rows
+[1] "Removing tmpirisdata\n"
+PASS:  reached to the end of the test code without segmentation fault
+Warning message:
+In postgresqlDescribeFields(res, ...) :
+  RS-DBI driver warning: (unknown (1021))
 > 
 > proc.time()
    user  system elapsed 
-  0.126   0.024   0.134 
+  0.435   0.042   0.515 

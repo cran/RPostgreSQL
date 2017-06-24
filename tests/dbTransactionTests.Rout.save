@@ -1,8 +1,7 @@
 
-R version 2.15.2 (2012-10-26) -- "Trick or Treat"
-Copyright (C) 2012 The R Foundation for Statistical Computing
-ISBN 3-900051-07-0
-Platform: x86_64-unknown-linux-gnu (64-bit)
+R version 3.3.1 (2016-06-21) -- "Bug in Your Hair"
+Copyright (C) 2016 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -109,7 +108,23 @@ Type 'q()' to quit R.
 +     dbDisconnect(con2)
 +     dbDisconnect(con1)
 + }
+Loading required package: RPostgreSQL
+Loading required package: DBI
+begin transaction in con1
+create table rockdata in con1
+PASS rockdata is visible through con1
+PASS rockdata is invisible through con2
+commit in con1
+PASS rockdata is visible through con2
+remove the table from con1
+PASS rockdata is invisible through con2
+begin transaction in con1
+create table rockdata in con1
+PASS rockdata is visible through con1
+RollBack con1
+PASS rockdata is invisible through con1
+[1] TRUE
 > 
 > proc.time()
    user  system elapsed 
-  0.139   0.020   0.143 
+  0.539   0.039   0.715 

@@ -1,6 +1,6 @@
 
 ## PostgreSQLSupport.R
-## $Id: PostgreSQLSupport.R 243 2012-12-06 14:26:41Z tomoakin@kenroku.kanazawa-u.ac.jp $
+## $Id$
 
 ## This package was developed as a part of Summer of Code program organized by Google.
 ## Thanks to David A. James & Saikat DebRoy, the authors of RMySQL package.
@@ -19,8 +19,7 @@ postgresqlInitDriver <- function(max.con=16, fetch.default.rec = 500, force.relo
        stop("default num of records per fetch must be positive")
    config.params <- as.integer(c(max.con, fetch.default.rec))
    force <- as.logical(force.reload)
-   drvId <- .Call("RS_PostgreSQL_init", config.params, force,
-                  PACKAGE = .PostgreSQLPkgName)
+   drvId <- .Call(RS_PostgreSQL_init, config.params, force)
    new("PostgreSQLDriver", Id = drvId)
 }
 
@@ -28,7 +27,7 @@ postgresqlCloseDriver <- function(drv, ...) {
    if(!isPostgresqlIdCurrent(drv))
       return(TRUE)
    drvId <- as(drv, "integer")
-   .Call("RS_PostgreSQL_closeManager", drvId, PACKAGE = .PostgreSQLPkgName)
+   .Call(RS_PostgreSQL_closeManager, drvId)
 }
 
 
@@ -58,7 +57,7 @@ postgresqlDriverInfo <- function(obj, what="", ...) {
     if(!isPostgresqlIdCurrent(obj))
         stop(paste("expired", class(obj)))
     drvId <- as(obj, "integer")
-    info <- .Call("RS_PostgreSQL_managerInfo", drvId, PACKAGE = .PostgreSQLPkgName)
+    info <- .Call(RS_PostgreSQL_managerInfo, drvId)
     ## replace drv/connection id w. actual drv/connection objects
     conObjs <- vector("list", length = info$"num_con")
     ids <- info$connectionIds
@@ -72,32 +71,34 @@ postgresqlDriverInfo <- function(obj, what="", ...) {
         info
 }
 
-## note that dbname may be a database name, an empty string "", or NULL.
-## The distinction between "" and NULL is that "" is interpreted by
-## the PostgreSQL API as the default database (PostgreSQL config specific)
-## while NULL means "no database".
+## All NULL values are changed to empty strings (""). 
+## These are treated as default values.
 postgresqlNewConnection <- function(drv, user = "", password = "",
                                     host = "", dbname = "",
                                     port = "", tty = "", options = "", forceISOdate=TRUE) {
     if(!isPostgresqlIdCurrent(drv))
         stop("expired manager")
     if(is.null(user))
-        stop("user argument cannot be NULL")
+        user=""
     if(is.null(password))
-        stop("password argument cannot be NULL")
+        password=""
+    if(is.null(host))
+        host=""
     if(is.null(dbname))
-        stop("dbname argument cannot be NULL")
+        dbname=""
     if(is.null(port))
-        stop("port argument cannot be NULL")
+        port=""
     if(is.null(tty))
-        stop("tty argument cannot be NULL")
+        tty=""
+    if(is.null(options))
+        options=""
 
     con.params <- as.character(c(user, password, host,
                                  dbname, port,
                                  tty, options))
 
     drvId <- as(drv, "integer")
-    conId <- .Call("RS_PostgreSQL_newConnection", drvId, con.params, PACKAGE = .PostgreSQLPkgName)
+    conId <- .Call(RS_PostgreSQL_newConnection, drvId, con.params)
     con <- new("PostgreSQLConnection", Id = conId)
     if(forceISOdate){
       dbGetQuery(con, "set datestyle to ISO")      
@@ -109,7 +110,7 @@ postgresqlCloneConnection <- function(con, ...) {
     if(!isPostgresqlIdCurrent(con))
         stop(paste("expired", class(con)))
     conId <- as(con, "integer")
-    newId <- .Call("RS_PostgreSQL_cloneConnection", conId, PACKAGE = .PostgreSQLPkgName)
+    newId <- .Call(RS_PostgreSQL_cloneConnection, conId)
     new("PostgreSQLConnection", Id = newId)
 }
 
@@ -151,14 +152,14 @@ postgresqlCloseConnection <- function(con, ...) {
             stop("connection has pending rows (close open results set first)")
     }
     conId <- as(con, "integer")
-    .Call("RS_PostgreSQL_closeConnection", conId, PACKAGE = .PostgreSQLPkgName)
+    .Call(RS_PostgreSQL_closeConnection, conId)
 }
 
 postgresqlConnectionInfo <- function(obj, what="", ...) {
     if(!isPostgresqlIdCurrent(obj))
         stop(paste("expired", class(obj), deparse(substitute(obj))))
     id <- as(obj, "integer")
-    info <- .Call("RS_PostgreSQL_connectionInfo", id, PACKAGE = .PostgreSQLPkgName)
+    info <- .Call(RS_PostgreSQL_connectionInfo, id)
     rsId <- vector("list", length = length(info$rsId))
     for(i in seq(along = info$rsId))
         rsId[[i]] <- new("PostgreSQLResult", Id = c(id, info$rsId[i]))
@@ -197,9 +198,9 @@ postgresqlExecStatement <- function(con, statement, params, ...) {
     conId <- as(con, "integer")
     statement <- as(statement, "character")
     if(missing(params)){
-        rsId <- .Call("RS_PostgreSQL_exec", conId, statement, PACKAGE = .PostgreSQLPkgName)
+        rsId <- .Call(RS_PostgreSQL_exec, conId, statement)
     }else{
-        rsId <- .External("RS_PostgreSQL_pqexecparams", conId, statement, as(params, "character"), ..., PACKAGE = .PostgreSQLPkgName)
+        rsId <- .External(RS_PostgreSQL_pqexecparams, conId, statement, as(params, "character"), ...)
     }
     new("PostgreSQLResult", Id = rsId)
 }
@@ -207,23 +208,33 @@ postgresqlExecStatement <- function(con, statement, params, ...) {
 postgresqlEscapeStrings <- function(con, preescapedstring) {
     conId <- as(con, "integer")
     preescapedstring <- as(preescapedstring, "character")
-    escapedstring <- .Call("RS_PostgreSQL_escape", conId, preescapedstring, PACKAGE = .PostgreSQLPkgName)
+    escapedstring <- .Call(RS_PostgreSQL_escape, conId, preescapedstring)
     return(escapedstring)
 }
-
+postgresqlEscapeBytea <- function(con, raw_data) {
+    conId <- as(con, "integer")
+    raw_data <- as(raw_data, "raw")
+    escapedstring <- .Call(RS_PostgreSQL_escape_bytea, conId, raw_data)
+    return(escapedstring)
+}
+postgresqlUnescapeBytea <- function(escapedbytea) {
+    escapedbytea <- as(escapedbytea, "character")
+    raw_data <- .Call(RS_PostgreSQL_unescape_bytea, escapedbytea)
+    return(raw_data)
+}
 postgresqlpqExec <- function(con, statement) {
     if(!isPostgresqlIdCurrent(con))
         stop(paste("expired", class(con)))
     conId <- as(con, "integer")
     statement <- as(statement, "character")
-    .Call("RS_PostgreSQL_pqexec", conId, statement, PACKAGE = .PostgreSQLPkgName)
+    .Call(RS_PostgreSQL_pqexec, conId, statement)
 }
 postgresqlpqExecParams <- function(con, statement, ...) {
     if(!isPostgresqlIdCurrent(con))
         stop(paste("expired", class(con)))
     conId <- as(con, "integer")
     statement <- as(statement, "character")
-    .External("RS_PostgreSQL_pqexecparams", conId, statement, ..., PACKAGE = .PostgreSQLPkgName)
+    .External(RS_PostgreSQL_pqexecparams, conId, statement, ...)
 }
 
 postgresqlCopyIn <- function(con, filename) {
@@ -231,7 +242,7 @@ postgresqlCopyIn <- function(con, filename) {
         stop(paste("expired", class(con)))
     conId <- as(con, "integer")
     filename <- as(filename, "character")
-    .Call("RS_PostgreSQL_CopyIn", conId, filename, PACKAGE = .PostgreSQLPkgName)
+    .Call(RS_PostgreSQL_CopyIn, conId, filename)
 }
 postgresqlCopyInDataframe <- function(con, dataframe) {
     if(!isPostgresqlIdCurrent(con))
@@ -239,13 +250,13 @@ postgresqlCopyInDataframe <- function(con, dataframe) {
     conId <- as(con, "integer")
     nrow <- nrow(dataframe)
     p <- ncol(dataframe)
-    .Call("RS_PostgreSQL_CopyInDataframe", conId, dataframe, nrow, p , PACKAGE = .PostgreSQLPkgName)
+    .Call(RS_PostgreSQL_CopyInDataframe, conId, dataframe, nrow, p)
 }
 postgresqlgetResult <- function(con) {
     if(!isPostgresqlIdCurrent(con))
         stop(paste("expired", class(con)))
     conId <- as(con, "integer")
-    rsId <- .Call("RS_PostgreSQL_getResult", conId, PACKAGE = .PostgreSQLPkgName)
+    rsId <- .Call(RS_PostgreSQL_getResult, conId)
     new("PostgreSQLResult", Id = rsId)
 }
 
@@ -261,27 +272,26 @@ postgresqlQuickSQL <- function(con, statement, ...) {
     }
     rs <- try(dbSendQuery(con, statement, ...))
     if (inherits(rs, ErrorClass)){
-        warning("Could not create execute", statement)
+        warning("Could not create execute: ", statement)
         return(NULL)
     }
     if(dbHasCompleted(rs)){
         dbClearResult(rs)            ## no records to fetch, we're done
         invisible()
-        return(NULL)
+        return(data.frame()) # data.frame of 0 row 0 columns
     }
     res <- fetch(rs, n = -1)
     if(dbHasCompleted(rs))
         dbClearResult(rs)
     else
-        warning("pending rows")
+        warning("pending rows")  # shouldn't occur...
     res
 }
 
 postgresqlDescribeFields <- function(res, ...) {
     flds <- dbGetInfo(res, "fieldDescription")[[1]][[1]]
     if(!is.null(flds)){
-        flds$Sclass <- .Call("RS_DBI_SclassNames", flds$Sclass,
-                             PACKAGE = .PostgreSQLPkgName)
+        flds$Sclass <- .Call(RS_DBI_SclassNames, flds$Sclass)
 
         ## -------
         ## This is actually a bug introduced deliberately. In dbGetInfo, it displays the Sclass for Date/Time datatypes in Pg
@@ -298,8 +308,7 @@ postgresqlDescribeFields <- function(res, ...) {
         }
         ## -------
 
-        flds$type <- .Call("RS_PostgreSQL_typeNames", as.integer(flds$type),
-                           PACKAGE = .PostgreSQLPkgName)
+        flds$type <- .Call(RS_PostgreSQL_typeNames, as.integer(flds$type))
         ## no factors
         structure(flds, row.names = paste(seq(along=flds$type)),
                   class = "data.frame")
@@ -389,11 +398,10 @@ postgresqlDBApply <- function(res, INDEX, FUN = stop("must specify FUN"),
     funs <- list(begin = begin, end = end,
                  group.begin = group.begin,
                  group.end = group.end, new.record = new.record)
-    out <- .Call("RS_PostgreSQL_dbApply",
+    out <- .Call(RS_PostgreSQL_dbApply,
                  rs = rsId,
                  INDEX = as.integer(INDEX-1),
-                 funs, rho, as.integer(batchSize), as.integer(maxBatch),
-                 PACKAGE = .PostgreSQLPkgName)
+                 funs, rho, as.integer(batchSize), as.integer(maxBatch))
     if(!is.null(end) && dbHasCompleted(res))
         end()
     out
@@ -412,7 +420,7 @@ postgresqlDBApply <- function(res, INDEX, FUN = stop("must specify FUN"),
 postgresqlFetch <- function(res, n=0, ...) {
     n <- as(n, "integer")
     rsId <- as(res, "integer")
-    rel <- .Call("RS_PostgreSQL_fetch", rsId, nrec = n, PACKAGE = .PostgreSQLPkgName)
+    rel <- .Call(RS_PostgreSQL_fetch, rsId, nrec = n)
     if(length(rel)==0 || length(rel[[1]])==0)
         return(NULL)
     ## create running row index as of previous fetch (if any)
@@ -445,7 +453,7 @@ postgresqlResultInfo <- function(obj, what = "", ...) {
     if(!isPostgresqlIdCurrent(obj))
         stop(paste("expired", class(obj), deparse(substitute(obj))))
     id <- as(obj, "integer")
-    info <- .Call("RS_PostgreSQL_resultSetInfo", id, PACKAGE = .PostgreSQLPkgName)
+    info <- .Call(RS_PostgreSQL_resultSetInfo, id)
     if(!missing(what))
         info[what]
     else
@@ -474,7 +482,7 @@ postgresqlCloseResult <- function(res, ...) {
     if(!isPostgresqlIdCurrent(res))
         return(TRUE)
     rsId <- as(res, "integer")
-    .Call("RS_PostgreSQL_closeResultSet", rsId, PACKAGE = .PostgreSQLPkgName)
+    .Call(RS_PostgreSQL_closeResultSet, rsId)
 }
 
 ## Use NULL, "", or 0 as row.names to prevent using any field as row.names.
@@ -588,11 +596,6 @@ postgresqlImportFile <- function(con, name, value, field.types = NULL, overwrite
 ## it with the values of the data.frame "value"
 ## TODO: This function should execute its sql as a single transaction,
 ##       and allow converter functions.
-## TODO: In the unlikely event that value has a field called "row_names"
-##       we could inadvertently overwrite it (here the user should set
-##       row.names=F)  I'm (very) reluctantly adding the code re: row.names,
-##       because I'm not 100% comfortable using data.frames as the basic
-##       data for relations.
 postgresqlWriteTable <- function(con, name, value, field.types, row.names = TRUE,
                                  overwrite = FALSE, append = FALSE, ..., allow.keywords = FALSE) {
     if(overwrite && append)
@@ -649,7 +652,7 @@ postgresqlWriteTable <- function(con, name, value, field.types, row.names = TRUE
     })
     oldenc <- dbGetQuery(new.con, "SHOW client_encoding")
     postgresqlpqExec(new.con, "SET CLIENT_ENCODING TO 'UTF8'")
-    sql4 <- paste("COPY", postgresqlTableRef(name), "FROM STDIN")
+    sql4 <- paste("COPY", postgresqlTableRef(name),"(",paste(postgresqlQuoteId(names(value)),collapse=","),") FROM STDIN")
     postgresqlpqExec(new.con, sql4)
     postgresqlCopyInDataframe(new.con, value)
     rs<-postgresqlgetResult(new.con)

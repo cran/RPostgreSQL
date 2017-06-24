@@ -1,7 +1,6 @@
 
-R version 2.12.0 RC (2010-10-07 r53227)
-Copyright (C) 2010 The R Foundation for Statistical Computing
-ISBN 3-900051-07-0
+R version 3.3.1 (2016-06-21) -- "Bug in Your Hair"
+Copyright (C) 2016 The R Foundation for Statistical Computing
 Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
@@ -69,4 +68,21 @@ Type 'q()' to quit R.
 +     dbDisconnect(con)
 +     cat("PASS:  reached to the end of the test code without segmentation fault\n")
 + }
+Loading required package: RPostgreSQL
+Loading required package: DBI
+Error in postgresqlExecStatement(conn, statement, ...) : 
+  RS-DBI driver: (could not Retrieve the result : ERROR:  operator does not exist: text = integer
+LINE 1: select * from tmpirisdata where "Species"=0
+                                                 ^
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+)
+NULL
+[1] "Removing tmpirisdata\n"
+PASS:  reached to the end of the test code without segmentation fault
+Warning message:
+In postgresqlQuickSQL(conn, statement, ...) :
+  Could not create execute: select * from tmpirisdata where "Species"=0
 > 
+> proc.time()
+   user  system elapsed 
+  0.468   0.041   0.546 

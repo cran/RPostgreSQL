@@ -1,8 +1,7 @@
 
-R version 2.15.2 (2012-10-26) -- "Trick or Treat"
-Copyright (C) 2012 The R Foundation for Statistical Computing
-ISBN 3-900051-07-0
-Platform: x86_64-unknown-linux-gnu (64-bit)
+R version 3.3.1 (2016-06-21) -- "Bug in Your Hair"
+Copyright (C) 2016 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -103,8 +102,84 @@ Type 'q()' to quit R.
 + 
 +     dbDisconnect(con)
 + }
+Loading required package: RPostgreSQL
+Loading required package: DBI
+[1] "2008-07-01 14:15:16 UTC" "2000-01-02 03:04:05 UTC"
+testing UTC
+
+**** Trying with  timestamp 
+inserted string 1: 2008-07-01 14:15:16.123+00
+inserted string 2: 2000-01-02 03:04:05.678+00
+[1] "2008-07-01 14:15:16 UTC" "2000-01-02 03:04:05 UTC"
+[1] "2008-07-01 14:15:16 UTC" "2000-01-02 03:04:05 UTC"
+PASS
+PASS
+
+
+**** Trying with  timestamp with time zone 
+inserted string 1: 2008-07-01 14:15:16.123+00
+inserted string 2: 2000-01-02 03:04:05.678+00
+[1] "2008-07-01 14:15:16 UTC" "2000-01-02 03:04:05 UTC"
+[1] "2008-07-01 14:15:16 UTC" "2000-01-02 03:04:05 UTC"
+PASS
+PASS
+testing Asia/Tokyo
+
+**** Trying with  timestamp 
+inserted string 1: 2008-07-01 14:15:16.123+00
+inserted string 2: 2000-01-02 03:04:05.678+00
+[1] "2008-07-01 14:15:16 UTC" "2000-01-02 03:04:05 UTC"
+[1] "2008-07-01 14:15:16 UTC" "2000-01-02 03:04:05 UTC"
+PASS
+PASS
+
+
+**** Trying with  timestamp with time zone 
+inserted string 1: 2008-07-01 14:15:16.123+00
+inserted string 2: 2000-01-02 03:04:05.678+00
+[1] "2008-07-01 14:15:16 UTC" "2000-01-02 03:04:05 UTC"
+[1] "2008-07-01 14:15:16 UTC" "2000-01-02 03:04:05 UTC"
+PASS
+PASS
+testing Australlia/South
+
+**** Trying with  timestamp 
+inserted string 1: 2008-07-01 14:15:16.123+00
+inserted string 2: 2000-01-02 03:04:05.678+00
+[1] "2008-07-01 14:15:16 UTC" "2000-01-02 03:04:05 UTC"
+[1] "2008-07-01 14:15:16 UTC" "2000-01-02 03:04:05 UTC"
+PASS
+PASS
+
+
+**** Trying with  timestamp with time zone 
+inserted string 1: 2008-07-01 14:15:16.123+00
+inserted string 2: 2000-01-02 03:04:05.678+00
+[1] "2008-07-01 14:15:16 UTC" "2000-01-02 03:04:05 UTC"
+[1] "2008-07-01 14:15:16 UTC" "2000-01-02 03:04:05 UTC"
+PASS
+PASS
+testing America/New_York
+
+**** Trying with  timestamp 
+inserted string 1: 2008-07-01 14:15:16.123+00
+inserted string 2: 2000-01-02 03:04:05.678+00
+[1] "2008-07-01 14:15:16 UTC" "2000-01-02 03:04:05 UTC"
+[1] "2008-07-01 14:15:16 UTC" "2000-01-02 03:04:05 UTC"
+PASS
+PASS
+
+
+**** Trying with  timestamp with time zone 
+inserted string 1: 2008-07-01 14:15:16.123+00
+inserted string 2: 2000-01-02 03:04:05.678+00
+[1] "2008-07-01 14:15:16 UTC" "2000-01-02 03:04:05 UTC"
+[1] "2008-07-01 14:15:16 UTC" "2000-01-02 03:04:05 UTC"
+PASS
+PASS
+[1] TRUE
 > 
 > 
 > proc.time()
    user  system elapsed 
-  0.131   0.027   0.141 
+  0.754   0.048   1.099 

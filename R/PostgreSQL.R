@@ -1,5 +1,5 @@
 ## PostgreSQL.R
-## $Id: PostgreSQL.R 223 2011-12-29 11:31:45Z tomoakin@kenroku.kanazawa-u.ac.jp $
+## $Id$
 
 ## This package was developed as a part of Summer of Code program organized by Google.
 ## Thanks to David A. James & Saikat DebRoy, the authors of RMySQL package.
@@ -12,7 +12,7 @@
 
 ##.PostgreSQLRCS <- "$Id: PostgreSQL.R,v 0.1 2008/06/10 14:00:00$"
 .PostgreSQLPkgName <- "RPostgreSQL"
-.PostgreSQLVersion <- "0.3-0"       ##package.description(.PostgreSQLPkgName, fields = "Version")
+.PostgreSQLVersion <- "0.6-1"       ##package.description(.PostgreSQLPkgName, fields = "Version")
 .PostgreSQL.NA.string <- "\\N"      ## on input, PostgreSQL interprets \N as NULL (NA)
 
 setOldClass("data.frame")      ## to appease setMethod's signature warnings...
@@ -107,8 +107,7 @@ setMethod("dbGetException", "PostgreSQLConnection",
           def = function(conn, ...){
               if(!isPostgresqlIdCurrent(conn))
                   stop(paste("expired", class(conn)))
-              .Call("RS_PostgreSQL_getException", as(conn, "integer"),
-                    PACKAGE = .PostgreSQLPkgName)
+              .Call(RS_PostgreSQL_getException, as(conn, "integer"))
           },
           valueClass = "list"
           )
@@ -196,6 +195,31 @@ setMethod("dbRemoveTable",
                   !inherits(rc, ErrorClass)
               }
               else FALSE
+          },
+          valueClass = "logical"
+          )
+
+setMethod("dbBegin",
+          signature(conn="PostgreSQLConnection"),
+          def = function(conn,  ...){
+              rc <- try(dbGetQuery(conn, "BEGIN"))
+              !inherits(rc, ErrorClass)
+          },
+          valueClass = "logical"
+          )
+setMethod("dbCommit",
+          signature(conn="PostgreSQLConnection"),
+          def = function(conn,  ...){
+              rc <- try(dbGetQuery(conn, "COMMIT"))
+              !inherits(rc, ErrorClass)
+          },
+          valueClass = "logical"
+          )
+setMethod("dbRollback",
+          signature(conn="PostgreSQLConnection"),
+          def = function(conn,  ...){
+              rc <- try(dbGetQuery(conn, "ROLLBACK"))
+              !inherits(rc, ErrorClass)
           },
           valueClass = "logical"
           )
@@ -337,7 +361,7 @@ setMethod("dbHasCompleted", "PostgreSQLResult",
 setMethod("dbGetException", "PostgreSQLResult",
           def = function(conn, ...){
               id <- as(conn, "integer")[1:2]
-              .Call("RS_PostgreSQL_getException", id, PACKAGE = .PostgreSQLPkgName)
+              .Call(RS_PostgreSQL_getException, id)
           },
           valueClass = "list"    ## TODO: should be a DBIException?
           )

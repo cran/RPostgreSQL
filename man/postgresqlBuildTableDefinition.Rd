@@ -7,7 +7,8 @@
    input data.frame
 }
 \usage{
-postgresqlBuildTableDefinition(dbObj, name, obj, field.types = NULL, row.names = TRUE, ...)
+postgresqlBuildTableDefinition(dbObj, name, obj, 
+	field.types = NULL, row.names = TRUE, ...)
 }
 \arguments{
   \item{dbObj}{any DBI object (used only to dispatch according to the 
@@ -31,7 +32,7 @@ postgresqlBuildTableDefinition(dbObj, name, obj, field.types = NULL, row.names =
 \references{
   See the Database Interface definition document
   \code{DBI.pdf} in the base directory of this package
-  or \url{http://stat.bell-labs.com/RS-DBI}.
+  or \url{https://cran.r-project.org/package=DBI}.
 }
 \seealso{
   \code{\link{PostgreSQL}},

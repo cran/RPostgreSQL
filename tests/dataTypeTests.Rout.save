@@ -1,7 +1,6 @@
 
-R version 2.13.1 (2011-07-08)
-Copyright (C) 2011 The R Foundation for Statistical Computing
-ISBN 3-900051-07-0
+R version 3.3.1 (2016-06-21) -- "Bug in Your Hair"
+Copyright (C) 2016 The R Foundation for Statistical Computing
 Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
@@ -129,4 +128,19 @@ Type 'q()' to quit R.
 + 
 +     cat("DONE\n")
 + }
+Loading required package: RPostgreSQL
+Loading required package: DBI
+Read Numeric values
+GOOD -- all numeric types are as expected
+GOOD -- all numeric values are as expected
+Read Logical values
+GOOD -- all logical types are as expected
+GOOD -- all logical values are as expected
+Read Character values
+GOOD -- all character types are as expected
+GOOD -- all character values are as expected
+DONE
 > 
+> proc.time()
+   user  system elapsed 
+  0.528   0.031   0.645 

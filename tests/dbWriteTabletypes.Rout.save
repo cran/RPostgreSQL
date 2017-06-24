@@ -1,8 +1,7 @@
 
-R version 2.15.2 (2012-10-26) -- "Trick or Treat"
-Copyright (C) 2012 The R Foundation for Statistical Computing
-ISBN 3-900051-07-0
-Platform: x86_64-unknown-linux-gnu (64-bit)
+R version 3.3.1 (2016-06-21) -- "Bug in Your Hair"
+Copyright (C) 2016 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -248,8 +247,40 @@ Type 'q()' to quit R.
 + 
 +     cat("DONE\n")
 + }
+Loading required package: RPostgreSQL
+Loading required package: DBI
+  row.names            strings
+1         1             normal
+2         2              t\tab
+3         3     v\vertical tab
+4         4          n\newline
+5         5 r carriage \retern
+6         6      back \\ slash
+7         7        f\form feed
+[1] "Removing rockdata\n"
+1 	normal
+2 	müß
+[1] "Removing rockdata\n"
+PASS:  could write small umlaut u and ligature sz
+1 	normal
+2 	kanji漢字
+[1] "Removing rockdata\n"
+PASS:  could write kanji
+Read Numeric values
+PASS -- all integer is as expected
+PASS integer value is preservedGOOD -- all numeric values are as expected
+Read Logical values
+GOOD -- all logical types are as expected
+GOOD -- all logical values are as expected
+Read Character values
+GOOD -- all character types are as expected
+GOOD -- all character values are as expected
+Check that read after write gets the same data types
+PASS -- Date type is as expected
+PASS -- TIMESTAMP is received as POSIXct
+DONE
 > 
 > 
 > proc.time()
    user  system elapsed 
-  0.217   0.020   0.221 
+  1.014   0.042   1.524 

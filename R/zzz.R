@@ -1,5 +1,5 @@
 ## zzz.R
-## $Id: zzz.R 189 2011-10-01 13:16:39Z dirk.eddelbuettel $
+## $Id$
 
 ## This package was developed as a part of Summer of Code program organized by Google.
 ## Thanks to David A. James & Saikat DebRoy, the authors of RMySQL package.

@@ -1,5 +1,5 @@
 ## Class: dbObjectId
-## $Id: dbObjectId.R 220 2011-12-03 12:50:46Z tomoakin@kenroku.kanazawa-u.ac.jp $
+## $Id$
 
 ## This package was developed as a part of Summer of Code program organized by Google.
 ## Thanks to David A. James & Saikat DebRoy, the authors of RMySQL package.
@@ -52,7 +52,7 @@ setMethod("print", "dbObjectId",
 ## verify that obj refers to a currently open/loaded database
 isPostgresqlIdCurrent <- function(obj) {
     obj <- as(obj, "integer")
-    .Call("RS_DBI_validHandle", obj, PACKAGE = .PostgreSQLPkgName)
+    .Call(RS_DBI_validHandle, obj)
 }
 
 

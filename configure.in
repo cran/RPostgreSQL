@@ -6,7 +6,9 @@
 # This file draws heavily on configure.in files from littler, RMySQL, and RdbiPgSQL
 
 # Set the name and version -- the version set here will propagate to other files from here
-AC_INIT(RPostgreSQL, 0.2)
+AC_INIT(RPostgreSQL, 0.5)
+
+AC_CONFIG_AUX_DIR(src)
 
 # Checks for common programs using default macros
 AC_PROG_CC
@@ -36,12 +38,12 @@ if test "${PG_CONFIG}" != ""; then
 else
 
     # let's look around -- code copied from RdbuiPgSQL but modified to use test -f
-    # added fink standard install location Neil 8/30/2009
     AC_MSG_NOTICE([checking for PostgreSQL header files])
     if ! test $PG_INCDIR
     then
 	for dir in \
 	/usr/include \
+	/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/usr/include \
 	/usr/include/pgsql \
 	/usr/include/postgresql \
 	/usr/local/include \
@@ -54,9 +56,6 @@ else
 	/opt/include/postgresql \
 	/opt/local/include \
 	/opt/local/include/postgresql \
-	/opt/local/include/postgresql84 \
-	/sw/opt/postgresql-8.4/include \
-	/Library/PostgresPlus/8.4SS/include \
 	/sw/include/postgresql
 	do
         AC_MSG_NOTICE([Checking include ${dir}.])
@@ -67,7 +66,7 @@ else
 	    fi
 	done
     fi
-
+	
     # likewise, let's look around for libpq.so
     if ! test $PG_LIBDIR
     then
@@ -85,9 +84,6 @@ else
 	/opt/lib/postgresql \
 	/opt/local/lib \
 	/opt/local/lib/postgresql \
-	/opt/local/lib/postgresql84 \
-	/sw/opt/postgresql-8.4/lib \
-	/Library/PostgresPlus/8.4SS/lib \
 	/sw/lib
 	do
         AC_MSG_NOTICE([Checking lib ${dir}.])
@@ -103,8 +99,11 @@ else
 	    fi
 	done
     fi
-    if ! test $PG_LIBDIR
+    if test $PG_LIBDIR && test $PG_INCDIR
     then
+       echo $PG_LIBDIR
+       echo $PG_INCDIR
+    else
         if test "$R_OS_TYPE" = "darwin" ; then
 # in case we cannot find any libpq library we will use the accompanied libpq
 # This content would be written into src/Makevars at the end of this script
@@ -118,7 +117,7 @@ all:  $(SHLIB)
 $(SHLIB): libpq/libpq.5.dylib
 
 libpq/libpq.5.dylib:
-	(cd libpq; $(MAKE) CC="$(CC)" CFLAGS="$(CFLAGS)" -f Makefile.darwin)
+	(cd libpq; $(MAKE) CC="$(CC)" CFLAGS="$(CFLAGS)" -f Makefile.darwin pg_config.h pg_config_os.h all)
 
 clean:
 	(cd libpq; $(MAKE) -f Makefile.darwin clean)
@@ -128,8 +127,16 @@ clean:
 fi
 
 # Expand into arguments
+
+#  make sure we use the included libpq-fe.h if it was not previously found
+if ! test $PG_INCDIR ; then
+	AC_MSG_NOTICE([Using internal package libpq-fe.h])
+	PG_INCDIR="src/libpq"
+fi
+
 PKG_CPPFLAGS="-I${PG_INCDIR}"
 PKG_LIBS="-L${PG_LIBDIR} -lpq"
+
 # Test for sanity by looking for libpq-fe.h, no explicit action on found, error on failure
 AC_CHECK_FILE(["${PG_INCDIR}/libpq-fe.h"],
 	,

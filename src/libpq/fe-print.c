@@ -3,7 +3,7 @@
  * fe-print.c
  *	  functions for pretty-printing query results
  *
- * Portions Copyright (c) 1996-2011, PostgreSQL Global Development Group
+ * Portions Copyright (c) 1996-2016, PostgreSQL Global Development Group
  * Portions Copyright (c) 1994, Regents of the University of California
  *
  * These functions were formerly part of fe-exec.c, but they
@@ -35,7 +35,6 @@
 
 #include "libpq-fe.h"
 #include "libpq-int.h"
-#include "pqsignal.h"
 
 
 static void do_field(const PQprintOpt *po, const PGresult *res,
@@ -57,7 +56,7 @@ static void fill(int length, int max, char filler, FILE *fp);
  *
  * Format results of a query for printing.
  *
- * PQprintOpt is a typedef (structure) that containes
+ * PQprintOpt is a typedef (structure) that contains
  * various flags and options. consult libpq-fe.h for
  * details
  *
@@ -112,17 +111,17 @@ PQprint(FILE *fout, const PGresult *res, const PQprintOpt *po)
 		if (!(fieldNames = (const char **) calloc(nFields, sizeof(char *))))
 		{
 			fprintf(stderr, libpq_gettext("out of memory\n"));
-			exit(1);
+			abort();
 		}
 		if (!(fieldNotNum = (unsigned char *) calloc(nFields, 1)))
 		{
 			fprintf(stderr, libpq_gettext("out of memory\n"));
-			exit(1);
+			abort();
 		}
 		if (!(fieldMax = (int *) calloc(nFields, sizeof(int))))
 		{
 			fprintf(stderr, libpq_gettext("out of memory\n"));
-			exit(1);
+			abort();
 		}
 		for (numFieldName = 0;
 			 po->fieldName && po->fieldName[numFieldName];
@@ -167,8 +166,9 @@ PQprint(FILE *fout, const PGresult *res, const PQprintOpt *po)
 			screen_size.ws_col = 80;
 #endif
 			pagerenv = getenv("PAGER");
+			/* if PAGER is unset, empty or all-white-space, don't use pager */
 			if (pagerenv != NULL &&
-				pagerenv[0] != '\0' &&
+				strspn(pagerenv, " \t\r\n") != strlen(pagerenv) &&
 				!po->html3 &&
 				((po->expanded &&
 				  nTups * (nFields + 1) >= screen_size.ws_row) ||
@@ -203,7 +203,7 @@ PQprint(FILE *fout, const PGresult *res, const PQprintOpt *po)
 			if (!(fields = (char **) calloc(nFields * (nTups + 1), sizeof(char *))))
 			{
 				fprintf(stderr, libpq_gettext("out of memory\n"));
-				exit(1);
+				abort();
 			}
 		}
 		else if (po->header && !po->html3)
@@ -330,7 +330,6 @@ do_field(const PQprintOpt *po, const PGresult *res,
 		 unsigned char *fieldNotNum, int *fieldMax,
 		 const int fieldMaxLen, FILE *fout)
 {
-
 	const char *pval,
 			   *p;
 	int			plen;
@@ -391,7 +390,7 @@ do_field(const PQprintOpt *po, const PGresult *res,
 			if (!(fields[i * nFields + j] = (char *) malloc(plen + 1)))
 			{
 				fprintf(stderr, libpq_gettext("out of memory\n"));
-				exit(1);
+				abort();
 			}
 			strcpy(fields[i * nFields + j], pval);
 		}
@@ -442,7 +441,6 @@ do_header(FILE *fout, const PQprintOpt *po, const int nFields, int *fieldMax,
 		  const char **fieldNames, unsigned char *fieldNotNum,
 		  const int fs_len, const PGresult *res)
 {
-
 	int			j;				/* for loop index */
 	char	   *border = NULL;
 
@@ -462,7 +460,7 @@ do_header(FILE *fout, const PQprintOpt *po, const int nFields, int *fieldMax,
 		if (!border)
 		{
 			fprintf(stderr, libpq_gettext("out of memory\n"));
-			exit(1);
+			abort();
 		}
 		p = border;
 		if (po->standard)
@@ -529,7 +527,6 @@ output_row(FILE *fout, const PQprintOpt *po, const int nFields, char **fields,
 		   unsigned char *fieldNotNum, int *fieldMax, char *border,
 		   const int row_index)
 {
-
 	int			field_index;	/* for loop index */
 
 	if (po->html3)
@@ -605,7 +602,7 @@ PQdisplayTuples(const PGresult *res,
 		if (!fLength)
 		{
 			fprintf(stderr, libpq_gettext("out of memory\n"));
-			exit(1);
+			abort();
 		}
 
 		for (j = 0; j < nFields; j++)
@@ -681,7 +678,6 @@ PQprintTuples(const PGresult *res,
 	int			i,
 				j;
 	char		formatString[80];
-
 	char	   *tborder = NULL;
 
 	nFields = PQnfields(res);
@@ -700,15 +696,15 @@ PQprintTuples(const PGresult *res,
 			int			width;
 
 			width = nFields * 14;
-			tborder = malloc(width + 1);
+			tborder = (char *) malloc(width + 1);
 			if (!tborder)
 			{
 				fprintf(stderr, libpq_gettext("out of memory\n"));
-				exit(1);
+				abort();
 			}
-			for (i = 0; i <= width; i++)
+			for (i = 0; i < width; i++)
 				tborder[i] = '-';
-			tborder[i] = '\0';
+			tborder[width] = '\0';
 			fprintf(fout, "%s\n", tborder);
 		}
 

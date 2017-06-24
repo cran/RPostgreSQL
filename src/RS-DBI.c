@@ -1,7 +1,7 @@
 /*
  * RS-DBI.c
  *
- * $Id: RS-DBI.c 245 2012-12-19 13:06:53Z tomoakin@kenroku.kanazawa-u.ac.jp $
+ * $Id$
  *
  * This package was developed as a part of Summer of Code program organized by Google.
  * Thanks to David A. James & Saikat DebRoy, the authors of RMySQL package.

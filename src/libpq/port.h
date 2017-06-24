@@ -3,7 +3,7 @@
  * port.h
  *	  Header for src/port/ compatibility functions.
  *
- * Portions Copyright (c) 1996-2011, PostgreSQL Global Development Group
+ * Portions Copyright (c) 1996-2016, PostgreSQL Global Development Group
  * Portions Copyright (c) 1994, Regents of the University of California
  *
  * src/include/port.h
@@ -34,6 +34,7 @@ extern bool pg_set_block(pgsocket sock);
 
 /* Portable path handling for Unix/Win32 (in path.c) */
 
+extern bool has_drive_prefix(const char *filename);
 extern char *first_dir_separator(const char *filename);
 extern char *last_dir_separator(const char *filename);
 extern char *first_path_var_separator(const char *pathlist);
@@ -41,9 +42,11 @@ extern void join_path_components(char *ret_path,
 					 const char *head, const char *tail);
 extern void canonicalize_path(char *path);
 extern void make_native_path(char *path);
+extern void cleanup_path(char *path);
 extern bool path_contains_parent_reference(const char *path);
 extern bool path_is_relative_and_below_cwd(const char *path);
 extern bool path_is_prefix_of_path(const char *path1, const char *path2);
+extern char *make_absolute_path(const char *path);
 extern const char *get_progname(const char *argv0);
 extern void get_share_path(const char *my_exec_path, char *ret_path);
 extern void get_etc_path(const char *my_exec_path, char *ret_path);
@@ -59,7 +62,7 @@ extern void get_man_path(const char *my_exec_path, char *ret_path);
 extern bool get_home_path(char *ret_path);
 extern void get_parent_directory(char *path);
 
-/* port/dirmod.c */
+/* common/pgfnames.c */
 extern char **pgfnames(const char *path);
 extern void pgfnames_cleanup(char **filenames);
 
@@ -109,42 +112,8 @@ extern BOOL AddUserToTokenDacl(HANDLE hToken);
 
 #if defined(WIN32) && !defined(__CYGWIN__)
 #define DEVNULL "nul"
-/* "con" does not work from the Msys 1.0.10 console (part of MinGW). */
-#define DEVTTY	"con"
 #else
 #define DEVNULL "/dev/null"
-#define DEVTTY "/dev/tty"
-#endif
-
-/*
- *	Win32 needs double quotes at the beginning and end of system()
- *	strings.  If not, it gets confused with multiple quoted strings.
- *	It also requires double-quotes around the executable name and
- *	any files used for redirection.  Other args can use single-quotes.
- *
- *	Generated using Win32 "CMD /?":
- *
- *	1. If all of the following conditions are met, then quote characters
- *	on the command line are preserved:
- *
- *	 - no /S switch
- *	 - exactly two quote characters
- *	 - no special characters between the two quote characters, where special
- *	   is one of: &<>()@^|
- *	 - there are one or more whitespace characters between the two quote
- *	   characters
- *	 - the string between the two quote characters is the name of an
- *	   executable file.
- *
- *	 2. Otherwise, old behavior is to see if the first character is a quote
- *	 character and if so, strip the leading character and remove the last
- *	 quote character on the command line, preserving any text after the last
- *	 quote character.
- */
-#if defined(WIN32) && !defined(__CYGWIN__)
-#define SYSTEMQUOTE "\""
-#else
-#define SYSTEMQUOTE ""
 #endif
 
 /* Portable delay handling */
@@ -162,7 +131,7 @@ extern unsigned char pg_ascii_tolower(unsigned char ch);
 
 /*
  * Versions of libintl >= 0.13 try to replace printf() and friends with
- * macros to their own versions that understand the %$ format.	We do the
+ * macros to their own versions that understand the %$ format.  We do the
  * same, so disable their macros, if they exist.
  */
 #ifdef vsnprintf
@@ -185,28 +154,16 @@ extern unsigned char pg_ascii_tolower(unsigned char ch);
 #endif
 
 extern int	pg_vsnprintf(char *str, size_t count, const char *fmt, va_list args);
-extern int
-pg_snprintf(char *str, size_t count, const char *fmt,...)
-/* This extension allows gcc to check the format string */
-__attribute__((format(PG_PRINTF_ATTRIBUTE, 3, 4)));
-extern int
-pg_sprintf(char *str, const char *fmt,...)
-/* This extension allows gcc to check the format string */
-__attribute__((format(PG_PRINTF_ATTRIBUTE, 2, 3)));
+extern int	pg_snprintf(char *str, size_t count, const char *fmt,...) pg_attribute_printf(3, 4);
+extern int	pg_sprintf(char *str, const char *fmt,...) pg_attribute_printf(2, 3);
 extern int	pg_vfprintf(FILE *stream, const char *fmt, va_list args);
-extern int
-pg_fprintf(FILE *stream, const char *fmt,...)
-/* This extension allows gcc to check the format string */
-__attribute__((format(PG_PRINTF_ATTRIBUTE, 2, 3)));
-extern int
-pg_printf(const char *fmt,...)
-/* This extension allows gcc to check the format string */
-__attribute__((format(PG_PRINTF_ATTRIBUTE, 1, 2)));
+extern int	pg_fprintf(FILE *stream, const char *fmt,...) pg_attribute_printf(2, 3);
+extern int	pg_printf(const char *fmt,...) pg_attribute_printf(1, 2);
 
 /*
- *	The GCC-specific code below prevents the __attribute__(... 'printf')
- *	above from being replaced, and this is required because gcc doesn't
- *	know anything about pg_printf.
+ *	The GCC-specific code below prevents the pg_attribute_printf above from
+ *	being replaced, and this is required because gcc doesn't know anything
+ *	about pg_printf.
  */
 #ifdef __GNUC__
 #define vsnprintf(...)	pg_vsnprintf(__VA_ARGS__)
@@ -243,32 +200,12 @@ __attribute__((format(PG_PRINTF_ATTRIBUTE, 1, 2)));
 extern char *pgwin32_setlocale(int category, const char *locale);
 
 #define setlocale(a,b) pgwin32_setlocale(a,b)
-
 #endif   /* WIN32 */
 
 /* Portable prompt handling */
 extern char *simple_prompt(const char *prompt, int maxlen, bool echo);
 
-/*
- *	WIN32 doesn't allow descriptors returned by pipe() to be used in select(),
- *	so for that platform we use socket() instead of pipe().
- *	There is some inconsistency here because sometimes we require pg*, like
- *	pgpipe, but in other cases we define rename to pgrename just on Win32.
- */
-#ifndef WIN32
-/*
- *	The function prototypes are not supplied because every C file
- *	includes this file.
- */
-#define pgpipe(a)			pipe(a)
-#define piperead(a,b,c)		read(a,b,c)
-#define pipewrite(a,b,c)	write(a,b,c)
-#else
-extern int	pgpipe(int handles[2]);
-extern int	piperead(int s, char *buf, int len);
-
-#define pipewrite(a,b,c)	send(a,b,c,0)
-
+#ifdef WIN32
 #define PG_SIGNAL_COUNT 32
 #define kill(pid,sig)	pgkill(pid,sig)
 extern int	pgkill(int pid, int sig);
@@ -277,12 +214,12 @@ extern int	pgkill(int pid, int sig);
 extern int	pclose_check(FILE *stream);
 
 /* Global variable holding time zone information. */
-#ifndef __CYGWIN__
-#define TIMEZONE_GLOBAL timezone
-#define TZNAME_GLOBAL tzname
-#else
+#if defined(WIN32) || defined(__CYGWIN__)
 #define TIMEZONE_GLOBAL _timezone
 #define TZNAME_GLOBAL _tzname
+#else
+#define TIMEZONE_GLOBAL timezone
+#define TZNAME_GLOBAL tzname
 #endif
 
 #if defined(WIN32) || defined(__CYGWIN__)
@@ -353,12 +290,28 @@ extern FILE *pgwin32_fopen(const char *, const char *);
 #define		fopen(a,b) pgwin32_fopen(a,b)
 #endif
 
-#ifndef popen
-#define popen(a,b) _popen(a,b)
+/*
+ * Mingw-w64 headers #define popen and pclose to _popen and _pclose.  We want
+ * to use our popen wrapper, rather than plain _popen, so override that.  For
+ * consistency, use our version of pclose, too.
+ */
+#ifdef popen
+#undef popen
 #endif
-#ifndef pclose
+#ifdef pclose
+#undef pclose
+#endif
+
+/*
+ * system() and popen() replacements to enclose the command in an extra
+ * pair of quotes.
+ */
+extern int	pgwin32_system(const char *command);
+extern FILE *pgwin32_popen(const char *command, const char *type);
+
+#define system(a) pgwin32_system(a)
+#define popen(a,b) pgwin32_popen(a,b)
 #define pclose(a) _pclose(a)
-#endif
 
 /* New versions of MingW have gettimeofday, old mingw and msvc don't */
 #ifndef HAVE_GETTIMEOFDAY
@@ -375,6 +328,20 @@ extern int	gettimeofday(struct timeval * tp, struct timezone * tzp);
 #endif   /* WIN32 */
 
 /*
+ * On Windows, setvbuf() does not support _IOLBF mode, and interprets that
+ * as _IOFBF.  To add insult to injury, setvbuf(file, NULL, _IOFBF, 0)
+ * crashes outright if "parameter validation" is enabled.  Therefore, in
+ * places where we'd like to select line-buffered mode, we fall back to
+ * unbuffered mode instead on Windows.  Always use PG_IOLBF not _IOLBF
+ * directly in order to implement this behavior.
+ */
+#ifndef WIN32
+#define PG_IOLBF	_IOLBF
+#else
+#define PG_IOLBF	_IONBF
+#endif
+
+/*
  * Default "extern" declarations or macro substitutes for library routines.
  * When necessary, these routines are provided by files in src/port/.
  */
@@ -385,26 +352,23 @@ extern char *crypt(const char *key, const char *setting);
 /* WIN32 handled in port/win32.h */
 #ifndef WIN32
 #define pgoff_t off_t
-#if defined(__bsdi__) || defined(__NetBSD__)
+#ifdef __NetBSD__
 extern int	fseeko(FILE *stream, off_t offset, int whence);
 extern off_t ftello(FILE *stream);
 #endif
 #endif
 
-#ifndef HAVE_ERAND48
-/* we assume all of these are present or missing together */
-extern double erand48(unsigned short xseed[3]);
-extern long lrand48(void);
-extern void srand48(long seed);
+extern double pg_erand48(unsigned short xseed[3]);
+extern long pg_lrand48(void);
+extern void pg_srand48(long seed);
+
+#ifndef HAVE_FLS
+extern int	fls(int mask);
 #endif
 
 #ifndef HAVE_FSEEKO
 #define fseeko(a, b, c) fseek(a, b, c)
 #define ftello(a)		ftell(a)
-#endif
-
-#ifndef HAVE_GETOPT
-extern int	getopt(int nargc, char *const * nargv, const char *ostr);
 #endif
 
 #if !defined(HAVE_GETPEEREID) && !defined(WIN32)
@@ -415,6 +379,10 @@ extern int	getpeereid(int sock, uid_t *uid, gid_t *gid);
 extern int	isinf(double x);
 #endif
 
+#ifndef HAVE_MKDTEMP
+extern char *mkdtemp(char *path);
+#endif
+
 #ifndef HAVE_RINT
 extern double rint(double x);
 #endif
@@ -423,10 +391,6 @@ extern double rint(double x);
 #include <netinet/in.h>
 #include <arpa/inet.h>
 extern int	inet_aton(const char *cp, struct in_addr * addr);
-#endif
-
-#ifndef HAVE_STRDUP
-extern char *strdup(const char *str);
 #endif
 
 #if !HAVE_DECL_STRLCAT
@@ -449,10 +413,14 @@ extern void unsetenv(const char *name);
 extern void srandom(unsigned int seed);
 #endif
 
+#ifndef HAVE_SSL_GET_CURRENT_COMPRESSION
+#define SSL_get_current_compression(x) 0
+#endif
+
 /* thread.h */
 extern char *pqStrerror(int errnum, char *strerrbuf, size_t buflen);
 
-#if !defined(WIN32) || defined(__CYGWIN__)
+#ifndef WIN32
 extern int pqGetpwuid(uid_t uid, struct passwd * resultbuf, char *buffer,
 		   size_t buflen, struct passwd ** result);
 #endif
@@ -465,6 +433,7 @@ extern int pqGethostbyname(const char *name,
 
 extern void pg_qsort(void *base, size_t nel, size_t elsize,
 		 int (*cmp) (const void *, const void *));
+extern int	pg_qsort_strcmp(const void *a, const void *b);
 
 #define qsort(a,b,c,d) pg_qsort(a,b,c,d)
 
@@ -476,6 +445,10 @@ extern void qsort_arg(void *base, size_t nel, size_t elsize,
 /* port/chklocale.c */
 extern int	pg_get_encoding_from_locale(const char *ctype, bool write_message);
 
+#if defined(WIN32) && !defined(FRONTEND)
+extern int	pg_codepage_to_encoding(UINT cp);
+#endif
+
 /* port/inet_net_ntop.c */
 extern char *inet_net_ntop(int af, const void *src, int bits,
 			  char *dst, size_t size);
@@ -485,5 +458,20 @@ extern int	pg_check_dir(const char *dir);
 
 /* port/pgmkdirp.c */
 extern int	pg_mkdir_p(char *path, int omode);
+
+/* port/pqsignal.c */
+typedef void (*pqsigfunc) (int signo);
+extern pqsigfunc pqsignal(int signo, pqsigfunc func);
+#ifndef WIN32
+extern pqsigfunc pqsignal_no_restart(int signo, pqsigfunc func);
+#else
+#define pqsignal_no_restart(signo, func) pqsignal(signo, func)
+#endif
+
+/* port/quotes.c */
+extern char *escape_single_quotes_ascii(const char *src);
+
+/* port/wait_error.c */
+extern char *wait_result_to_str(int exit_status);
 
 #endif   /* PG_PORT_H */

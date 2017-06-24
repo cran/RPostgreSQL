@@ -1,3 +1,34 @@
+Version 0.6-2
+
+    o   dbGetQuery do not return NULL.
+    o   use registration mechanism to call native routines.
+
+Version 0.5-3
+
+    o   Update the libpq library so that the package can be compiled in new versions of R and macOS.
+
+Version 0.5-2
+
+    o   Support dbBegin() API
+
+version 0.5-1 --2014-02-08
+
+    o   Remove segmentationfault when NULL is passed as host argument.
+
+    o   Conversion routine for raw in R and bytea in PostgreSQL
+
+    o   Use accompanied libpq when either of libpq and header is not found on darwin
+
+
+Version 0.5 -- 2013-10-12
+
+    o   postgresqlWriteTable: send column names at COPY
+
+    o   System library header search path for OS X 10.9 (Mavericks)
+
+    o   Memory leak was reduced
+    o   Close the socket on failure
+
 Version 0.4 -- 2013-03-27
 
     o   Initial implementation of prepared statement

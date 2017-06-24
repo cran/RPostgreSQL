@@ -1,4 +1,4 @@
-/* $Id: S4R.h 189 2011-10-01 13:16:39Z dirk.eddelbuettel $
+/* $Id$
  *
  * S4 (Splus5+) and R portability macros.
  *

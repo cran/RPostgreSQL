@@ -1,8 +1,9 @@
 
 import(methods)
 import(DBI)
+importFrom("utils", "count.fields", "read.table")
 
-useDynLib(RPostgreSQL)
+useDynLib(RPostgreSQL, .registration = TRUE)
 
 ## Classes
 exportClasses(
@@ -17,6 +18,7 @@ exportClasses(
 exportMethods(
    coerce,
    dbApply,
+   dbBegin,
    dbCallProc,
    dbClearResult,
    dbColumnInfo,
@@ -86,6 +88,8 @@ export(
   postgresqlReadTable,
   postgresqlWriteTable,
   postgresqlEscapeStrings,
+  postgresqlEscapeBytea,
+  postgresqlUnescapeBytea,
   postgresqlDataType,
   postgresqlQuoteId,
   postgresqlTableRef

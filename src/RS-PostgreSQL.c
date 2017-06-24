@@ -1,7 +1,7 @@
 /*
  * RS-PostgreSQL.c
  *
- * $Id: RS-PostgreSQL.c 245 2012-12-19 13:06:53Z tomoakin@kenroku.kanazawa-u.ac.jp $
+ * $Id$
  *
  * This package was developed as a part of Summer of Code program organized by Google.
  * Thanks to David A. James & Saikat DebRoy, the authors of RMySQL package.
@@ -71,6 +71,93 @@ struct data_types RS_PostgreSQL_dataTypes[] = {
  */
 
 
+/* RS_PostgreSQL_closeManager */
+/* s_object *
+ * RS_PostgreSQL_closeManager(Mgr_Handle * mgrHandle)
+ * {
+ *     S_EVALUATOR RS_DBI_manager * mgr;
+ *     s_object *status;
+ */
+
+s_object * RS_PostgreSQL_closeManager(Mgr_Handle * mgrHandle);
+
+/* 
+ * RS_DBI_SclassNames
+ * RS_DBI_validHandle
+ * RS_PostgreSQL_cloneConnection
+ * RS_PostgreSQL_closeConnection
+ * RS_PostgreSQL_closeManager
+ * RS_PostgreSQL_closeResultSet
+ * RS_PostgreSQL_connectionInfo
+ * RS_PostgreSQL_CopyIn
+ * RS_PostgreSQL_CopyInDataframe
+ * RS_PostgreSQL_dbApply
+ * RS_PostgreSQL_escape
+ * RS_PostgreSQL_escape_bytea
+ * RS_PostgreSQL_exec
+ * RS_PostgreSQL_fetch
+ * RS_PostgreSQL_getException
+ * RS_PostgreSQL_getResult
+ * RS_PostgreSQL_init
+ * RS_PostgreSQL_managerInfo
+ * RS_PostgreSQL_newConnection
+ * RS_PostgreSQL_pqexec
+ * RS_PostgreSQL_resultSetInfo
+ * RS_PostgreSQL_typeNames
+ * RS_PostgreSQL_unescape_bytea
+ */
+
+static R_NativePrimitiveArgType RS_PostgreSQL_closeManager_t[] = {
+    INTSXP
+};
+
+static const R_CMethodDef cMethods[] = {
+   {NULL, NULL, 0, NULL}
+};
+
+static const R_CallMethodDef callMethods[]  = {
+  {"RS_DBI_SclassNames", (DL_FUNC) &RS_DBI_SclassNames, 1},
+  {"RS_DBI_validHandle", (DL_FUNC) &RS_DBI_validHandle, 1},
+  {"RS_PostgreSQL_cloneConnection", (DL_FUNC) &RS_PostgreSQL_cloneConnection, 1},
+  {"RS_PostgreSQL_closeConnection", (DL_FUNC) &RS_PostgreSQL_closeConnection, 1},
+  {"RS_PostgreSQL_closeManager", (DL_FUNC) &RS_PostgreSQL_closeManager, 1},
+  {"RS_PostgreSQL_closeResultSet", (DL_FUNC) &RS_PostgreSQL_closeResultSet, 1},
+  {"RS_PostgreSQL_connectionInfo", (DL_FUNC) &RS_PostgreSQL_connectionInfo, 1},
+  {"RS_PostgreSQL_CopyIn", (DL_FUNC) &RS_PostgreSQL_CopyIn, 2},
+  {"RS_PostgreSQL_CopyInDataframe", (DL_FUNC) &RS_PostgreSQL_CopyInDataframe, 4},
+  {"RS_PostgreSQL_dbApply", (DL_FUNC) &RS_PostgreSQL_dbApply, 6},
+  {"RS_PostgreSQL_escape", (DL_FUNC) &RS_PostgreSQL_escape, 2},
+  {"RS_PostgreSQL_escape_bytea", (DL_FUNC) &RS_PostgreSQL_escape_bytea, 2},
+  {"RS_PostgreSQL_unescape_bytea", (DL_FUNC) &RS_PostgreSQL_unescape_bytea, 1},
+  {"RS_PostgreSQL_exec", (DL_FUNC) &RS_PostgreSQL_exec, 2},
+  {"RS_PostgreSQL_fetch", (DL_FUNC) &RS_PostgreSQL_fetch, 2},
+  {"RS_PostgreSQL_getException", (DL_FUNC) &RS_PostgreSQL_getException, 1},
+  {"RS_PostgreSQL_getResult", (DL_FUNC) &RS_PostgreSQL_getResult, 1},
+  {"RS_PostgreSQL_init", (DL_FUNC) &RS_PostgreSQL_init, 2},
+  {"RS_PostgreSQL_managerInfo", (DL_FUNC) &RS_PostgreSQL_managerInfo, 1},
+  {"RS_PostgreSQL_newConnection", (DL_FUNC) &RS_PostgreSQL_newConnection, 2},
+  {"RS_PostgreSQL_pqexec", (DL_FUNC) &RS_PostgreSQL_pqexec, 2},
+  {"RS_PostgreSQL_resultSetInfo", (DL_FUNC) &RS_PostgreSQL_resultSetInfo, 1},
+  {"RS_PostgreSQL_typeNames", (DL_FUNC) &RS_PostgreSQL_typeNames, 1},
+  {NULL, NULL, 0},
+};
+
+static const R_ExternalMethodDef extMethods[] = {
+  {"RS_PostgreSQL_pqexecparams", (DL_FUNC) &RS_PostgreSQL_pqexecparams, -1},
+  {NULL, NULL, 0},
+};
+
+
+void
+R_init_RPostgreSQL(DllInfo *info)
+{
+  R_registerRoutines(info, cMethods, callMethods, NULL, extMethods);
+  R_useDynamicSymbols(info, FALSE);
+  R_forceSymbols(info, TRUE);
+}
+
+
+
 Mgr_Handle *
 RS_PostgreSQL_init(s_object * config_params, s_object * reload)
 {
@@ -113,7 +200,6 @@ RS_PostgreSQL_closeManager(Mgr_Handle * mgrHandle)
 }
 
 
-
 /* open a connection with the same parameters used for in
  *  conHandle
  */
@@ -129,7 +215,7 @@ RS_PostgreSQL_cloneConnection(Con_Handle * conHandle)
     con = RS_DBI_getConnection(conHandle);
     conParams = con->conParams;
 
-    mgrHandle = RS_DBI_asMgrHandle(MGR_ID(conHandle));
+    PROTECT(mgrHandle = RS_DBI_asMgrHandle(MGR_ID(conHandle)));
 
 
     /* Connection parameters need to be put into a 8-element character
@@ -146,6 +232,7 @@ RS_PostgreSQL_cloneConnection(Con_Handle * conHandle)
     SET_CHR_EL(con_params, 6, C_S_CPY(conParams->options));
 
     MEM_UNPROTECT(1);
+    UNPROTECT(1);
 
     return RS_PostgreSQL_newConnection(mgrHandle, con_params);
 }
@@ -205,43 +292,21 @@ RS_PostgreSQL_newConnection(Mgr_Handle * mgrHandle, s_object * con_params)
     Con_Handle *conHandle;
     PGconn *my_connection;
 
-    char *user = NULL, *password = NULL, *host = NULL, *dbname = NULL, *port = NULL, *tty = NULL, *options = NULL;
+    const char *user = NULL, *password = NULL, *host = NULL, *dbname = NULL, *port = NULL, *tty = NULL, *options = NULL;
 
     if (!is_validHandle(mgrHandle, MGR_HANDLE_TYPE)) {
         RS_DBI_errorMessage("invalid PostgreSQLManager", RS_DBI_ERROR);
     }
 
-#define IS_EMPTY(s1)   !strcmp((s1), "")
-
-    if (!IS_EMPTY(CHR_EL(con_params, 0))) {
-        user = (char *) CHR_EL(con_params, 0);
-    }
-    if (!IS_EMPTY(CHR_EL(con_params, 1))) {
-        password = (char *) CHR_EL(con_params, 1);
-    }
-    if (!IS_EMPTY(CHR_EL(con_params, 2))) {
-        host = (char *) CHR_EL(con_params, 2);
-    }
-    if (!IS_EMPTY(CHR_EL(con_params, 3))) {
-        dbname = (char *) CHR_EL(con_params, 3);
-    }
-    if (!IS_EMPTY(CHR_EL(con_params, 4))) {
-        port = (char *) CHR_EL(con_params, 4);
-    }
-    if (!IS_EMPTY(CHR_EL(con_params, 5))) {
-        tty = (char *) CHR_EL(con_params, 5);
-    }
-    if (!IS_EMPTY(CHR_EL(con_params, 6))) {
-        options = (char *) CHR_EL(con_params, 6);
-    }
+    user = CHR_EL(con_params, 0);
+    password = CHR_EL(con_params, 1);
+    host = CHR_EL(con_params, 2);
+    dbname = CHR_EL(con_params, 3);
+    port = CHR_EL(con_params, 4);
+    tty = CHR_EL(con_params, 5);
+    options = CHR_EL(con_params, 6);
 
     my_connection = PQsetdbLogin(host, port, options, tty, dbname, user, password);
-
-    if (PQstatus(my_connection) != CONNECTION_OK) {
-        char buf[1000];
-	sprintf(buf, "could not connect %s@%s on dbname \"%s\"\n", PQuser(my_connection), host?host:"local", PQdb(my_connection));
-        RS_DBI_errorMessage(buf, RS_DBI_ERROR);
-    }
 
     conParams = RS_postgresql_allocConParams();
 
@@ -261,16 +326,33 @@ RS_PostgreSQL_newConnection(Mgr_Handle * mgrHandle, s_object * con_params)
     conParams->tty = RS_DBI_copyString(PQtty(my_connection));
     conParams->options = RS_DBI_copyString(PQoptions(my_connection));
 
+    if (PQstatus(my_connection) != CONNECTION_OK) {
+        char buf[1024];
+	snprintf(buf, 1023, 
+           "could not connect %s@%s:%s on dbname \"%s\": %s", 
+           conParams->user, conParams->host, conParams->port,
+           conParams->dbname, PQerrorMessage(my_connection));
+        buf[1023]= '\0';
+        PQfinish(my_connection);
+        my_connection = NULL;
+        RS_PostgreSQL_freeConParams(conParams); /*free BEFORE emitting err message that do not come back */
+        RS_DBI_errorMessage(buf, RS_DBI_ERROR);
+        return R_NilValue; /* don't reach here as it goes back to R proc */
+    }
+
     PROTECT(conHandle = RS_DBI_allocConnection(mgrHandle, (Sint) 1)); /* The second argument (1) specifies the number of result sets allocated */
     con = RS_DBI_getConnection(conHandle);
-    if (!con) {
+    if (my_connection && !con) {
         PQfinish(my_connection);
+        my_connection = NULL;
         RS_PostgreSQL_freeConParams(conParams);
         conParams = (RS_PostgreSQL_conParams *) NULL;
         RS_DBI_errorMessage("could not alloc space for connection object", RS_DBI_ERROR);
     }
-    con->drvConnection = (void *) my_connection;
-    con->conParams = (void *) conParams;
+    if(con){
+        con->drvConnection = (void *) my_connection;
+        con->conParams = (void *) conParams;
+    }
     UNPROTECT(1);
     return conHandle;
 }
@@ -357,10 +439,9 @@ RS_PostgreSQL_exec(Con_Handle * conHandle, s_object * statement)
         omsg = PQerrorMessage(my_connection);
         len = strlen(omsg);
         free(dyn_statement);
-        errMsg = malloc(len + 80); /* 80 should be larger than the length of "could not ..."*/
+        errMsg = R_alloc(len + 80, 1); /* 80 should be larger than the length of "could not ..."*/
         snprintf(errMsg, len + 80,  "could not run statement: %s", omsg);
         RS_DBI_errorMessage(errMsg, RS_DBI_ERROR);
-        free(errMsg);
     }
 
 
@@ -376,23 +457,18 @@ RS_PostgreSQL_exec(Con_Handle * conHandle, s_object * statement)
     /* char *PQresultErrorMessage(const PGresult *res); */
 
     if (strcmp(PQresultErrorMessage(my_result), "") != 0) {
-
-        free(dyn_statement);
         char *errResultMsg;
         const char *omsg;
         size_t len;
         omsg = PQerrorMessage(my_connection);
         len = strlen(omsg);
-        errResultMsg = malloc(len + 80); /* 80 should be larger than the length of "could not ..."*/
+        errResultMsg = R_alloc(len + 80, 1); /* 80 should be larger than the length of "could not ..."*/
         snprintf(errResultMsg, len + 80, "could not Retrieve the result : %s", omsg);
-        RS_DBI_errorMessage(errResultMsg, RS_DBI_ERROR);
-        free(errResultMsg);
-
         /*  Frees the storage associated with a PGresult.
          *  void PQclear(PGresult *res);   */
-
         PQclear(my_result);
-
+        free(dyn_statement);
+        RS_DBI_errorMessage(errResultMsg, RS_DBI_ERROR);
     }
 
     /* we now create the wrapper and copy values */
@@ -443,7 +519,7 @@ RS_PostgreSQL_createDataMappings(Res_Handle * rsHandle)
     con = RS_DBI_getConnection(rsHandle);
     num_fields = PQnfields(my_result);
 
-    PROTECT(flds = RS_DBI_allocFields(num_fields));
+    flds = RS_DBI_allocFields(num_fields); /* this returns malloced data (not from R) */
 
     char buff[1000];            /* Buffer to hold the sql query to check whether the given column is nullable */
     PGconn *conn;
@@ -576,7 +652,6 @@ RS_PostgreSQL_createDataMappings(Res_Handle * rsHandle)
             break;
         }
     }
-    UNPROTECT(1);
     return flds;
 }
 
@@ -898,8 +973,9 @@ RS_PostgreSQL_connectionInfo(Con_Handle * conHandle)
     revision_num = minor_revision % 100;
 
     {
-        char buf1[50];
-        sprintf(buf1, "%d.%d.%d", major, minor, revision_num);
+        char buf1[64];
+        snprintf(buf1, 63, "%d.%d.%d", major, minor, revision_num);
+        buf1[63]='\0';
         SET_LST_CHR_EL(output, 4, 0, C_S_CPY(buf1));
     }
 

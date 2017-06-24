@@ -1,3 +1,100 @@
+2017-06-19  Tomoaki NISHIYAMA  <tomoakin@staff.kanazawa-u.ac.jp>
+	* new libpq from postgresql-9.6.3 and Makefiles generated on Sierra (macOS 10.12)
+
+2014-02-08  Tomoaki NISHIYAMA  <tomoakin@staff.kanazawa-u.ac.jp>
+
+	Update tests docs for CRAN submission.
+	A bug in postgresqlNewConnection() was identified and fixed during the
+	test rewrite.
+
+	* inst/ANNOUNCEMENT
+	* inst/NEWS
+	* man/dbConnect-methods.Rd: explanation of the parameters.
+	* R/PostgreSQLSupport.R: newConnection do not emit error on NULL
+	argument but convert to empty string which is a valid value.
+	* src/RS-PostgreSQL.c: RS_PostgreSQL_newConnection() don't checkk for
+	empty string.
+	* tests: Write more appropriate comments. Tell when the test is
+	skipped.
+
+2014-02-06  Tomoaki NISHIYAMA  <tomoakin@staff.kanazawa-u.ac.jp>
+
+	* config.sub, config.guess, install-sh move to src subdirectory
+	* man/postgresqlBuildTableDefinition.Rd: Shorten usage line
+	* man/postgresqlSupport.Rd: Shorten usage line
+
+2014-02-04  Tomoaki NISHIYAMA  <tomoakin@staff.kanazawa-u.ac.jp>
+
+	* ChangeLog
+	* inst/News
+	* src/libpq: update to libpq from postgresql-9.3.2
+	* configure.in: change the condition to use accompanied libpq
+	* configure
+	* tests/bytea.R: test both standard_conforming_strings states; add PASS response
+
+2014-01-30  Tomoaki NISHIYAMA  <tomoakin@staff.kanazawa-u.ac.jp>
+
+	Support hex conversion for unescaping.
+	Prevent segfault on unknown type to dbWriteTable.
+	Add minimal description of the escapebytea and unescapebytea.
+
+	* ChangeLog
+	* man/postgresqlSupport.Rd
+	* src/RS-PQescape.c
+	* src/RS-pgsql-copy.c 
+	* R/PostgreSQLSupport.R: separate message body from heading
+	* tests/bytea.R: remove E prefix for postgresql version 9, though this
+	cause warning on 8.X.
+	* DESCRIPTION: forward the version to 0.5-1
+	* R/PostgreSQL.R: forward the version to 0.5-1
+
+2014-01-29  Tomoaki NISHIYAMA  <tomoakin@staff.kanazawa-u.ac.jp>
+
+	Initial support for Bytea data type.
+
+	* ChangeLog
+	* src/RS-PQescape.c
+	* R/PostgreSQLSupport.R
+	* NAMESPACE
+	* tests/bytea.R
+
+2013-11-12  Tomoaki NISHIYAMA  <tomoakin@staff.kanazawa-u.ac.jp>
+
+	Prepare for release
+
+	* inst/NEWS
+	* man/postgresqlBuildTableDefinition.Rd: line length
+	* man/postgresqlSupport.Rd: line length
+
+2013-10-27  Tomoaki NISHIYAMA  <tomoakin@staff.kanazawa-u.ac.jp>
+
+	Strange path support for OS X 10.9 Marvericks
+
+	* configure.in
+	* configure
+	* src/RS-PostgreSQL.c: keep declaration on the top of a block.
+
+2013-08-22  Tomoaki NISHIYAMA  <tomoakin@staff.kanazawa-u.ac.jp>
+
+	Memory leak detected by valgrind.
+
+	* src/RS-PostgreSQL.c
+	* src/RS-pgsql-copy.c
+	* src/RS-pgsql-getResult.c
+	* src/RS-pgsql-pqexec.c
+	* src/RS-pgsql-pqexecparams.c
+
+2013-06-21  Tomoaki NISHIYAMA  <tomoakin@staff.kanazawa-u.ac.jp>
+
+        * postgresqlWriteTable: send column names at COPY; 
+	* dbWriteTableTest.R: test for append=T
+
+2013-06-12  Tomoaki NISHIYAMA  <tomoakin@staff.kanazawa-u.ac.jp>
+
+	Close the socket on failure of opening connection
+
+	* src/RS-PostgreSQL.c
+
 2013-03-27  Tomoaki NISHIYAMA  <tomoakin@staff.kanazawa-u.ac.jp>
 
 	Document synchronization and testoutputs.
