@@ -107,10 +107,6 @@ s_object * RS_PostgreSQL_closeManager(Mgr_Handle * mgrHandle);
  * RS_PostgreSQL_unescape_bytea
  */
 
-static R_NativePrimitiveArgType RS_PostgreSQL_closeManager_t[] = {
-    INTSXP
-};
-
 static const R_CMethodDef cMethods[] = {
    {NULL, NULL, 0, NULL}
 };
@@ -670,6 +666,8 @@ RS_PostgreSQL_fetch(s_object * rsHandle, s_object * max_rec)
     int num_fields;
     int num_rows;               /*num_rows added to count number of rows */
     int k;                      /* This takes care of pointer to the required row */
+    /* Encoding */
+    cetype_t r_encoding = CE_NATIVE;
 
     result = RS_DBI_getResultSet(rsHandle);
     flds = result->fields;
@@ -697,6 +695,22 @@ RS_PostgreSQL_fetch(s_object * rsHandle, s_object * max_rec)
     num_rows = PQntuples(my_result);
 
     k = result->rowCount;       /* ADDED */
+
+
+    if(k < num_rows){
+      const char * pq_enc_string;
+      int pq_encoding = 0;
+      RS_DBI_connection *con;
+      con = RS_DBI_getConnection(rsHandle);
+      pq_encoding = PQclientEncoding((PGconn *) con->drvConnection);
+      pq_enc_string = pg_encoding_to_char(pq_encoding);
+      if(strcmp(pq_enc_string, "UTF8") == 0){
+        r_encoding = CE_UTF8;
+      }
+      if(strcmp(pq_enc_string, "LATIN1") == 0){
+        r_encoding = CE_LATIN1;
+      }
+    }
 
     completed = (Sint) 0;
     for (i = 0;; i++, k++) {
@@ -772,7 +786,7 @@ RS_PostgreSQL_fetch(s_object * rsHandle, s_object * max_rec)
                     SET_LST_CHR_EL(output, j, i, NA_STRING);
                 }
                 else {
-                    SET_LST_CHR_EL(output, j, i, C_S_CPY(PQgetvalue(my_result, k, j)));
+                    SET_LST_CHR_EL(output, j, i, mkCharCE(PQgetvalue(my_result, k, j), r_encoding));
                 }
                 break;
 
