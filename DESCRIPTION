@@ -1,6 +1,6 @@
 Package: RPostgreSQL
-Version: 0.7-4
-Date: 2022-08-02
+Version: 0.7-5
+Date: 2023-02-09
 Title: R Interface to the 'PostgreSQL' Database System
 Author: Joe Conway, Dirk Eddelbuettel, Tomoaki Nishiyama, Sameer Kumar Prayaga (during 2008), Neil Tiffin
 Maintainer: Tomoaki Nishiyama <tomoakin@staff.kanazawa-u.ac.jp>
@@ -22,6 +22,6 @@ URL: https://github.com/tomoakin/RPostgreSQL,
         https://cran.r-project.org/package=DBI,
         https://www.postgresql.org
 NeedsCompilation: yes
-Packaged: 2022-08-09 01:05:23 UTC; tomoaki
+Packaged: 2023-02-10 08:49:09 UTC; tomoaki
 Repository: CRAN
-Date/Publication: 2022-08-09 06:10:02 UTC
+Date/Publication: 2023-02-10 10:00:02 UTC

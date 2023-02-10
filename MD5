@@ -1,5 +1,5 @@
-7ae4d57e0fee8bde38ca99d84dd5d09c *ChangeLog
-9bd2b6bec9d46d0cddbeff91f9b6b06b *DESCRIPTION
+e30d991fa11d6cecc31e86874dd7474d *ChangeLog
+fe9169f551466eb1d3a240f654eece2f *DESCRIPTION
 532949fe6f8ba0bcd380ecdc746d28d4 *LICENSE
 ef67e1a6b6119ab1e5c8ef1a91d67304 *NAMESPACE
 eeb697c8142a3ae9d80089a524196a4e *R/PostgreSQL.R
@@ -8,11 +8,11 @@ ef38255aea563c169f1c43cf2e5fcd9b *R/PostgreSQLSupport.R
 0972c665e3149619a32f3b4d30528e0f *R/dbObjectId.R
 e186b6a39b159fc324e46e782b409e81 *R/zzz.R
 4b5e59c53d38086590d8d8553853ab04 *cleanup
-c2e653a33f2ba766a8e1076b36ab77b5 *configure
-32ca7f3707f2a97f2e621742490e6fe5 *configure.ac
+ffbc73249332c5a0944043849943d742 *configure
+b13ed4ee6d3f8c17b8be9264075db61a *configure.ac
 d41d8cd98f00b204e9800998ecf8427e *configure.win
 b5dc804b1235adfa8c8a310b052420fe *inst/ANNOUNCEMENT
-946c54d9e826b3a9420e1e572a228773 *inst/NEWS
+9d4faa4f14b8d1ea95ec1747a01f4b52 *inst/NEWS
 86063092fe732dcbc47a4830ca72703c *inst/README
 b73cbf6aae0e4d6ece79307f8a86713f *inst/THANKS
 8679cac91afacc39bc33286a030ed8d3 *inst/TODO
@@ -51,10 +51,10 @@ efefe77c91468729e7f3f44d2baa9e96 *man/postgresqlDBApply.Rd
 1fa83980e75922372ce35309a6d37ab7 *man/summary-methods.Rd
 d6e06acf69eb5a72bba126285917aeab *src/Makevars.in
 2c921023feef2ae3cc4188e50d5daf71 *src/Makevars.win
-28dcb135ca9d6e4b1a3f0c7a9161435a *src/RS-DBI.c
+0c184c80f6bcc200e415956690a72a43 *src/RS-DBI.c
 6ad9f44d57ff73cd8f4bc5bda70de3ec *src/RS-DBI.h
 b8d8232a7427a51cb16c50d081d21232 *src/RS-PQescape.c
-de9f4ee6ad83c1a9bd69bb2c48ba4fb3 *src/RS-PostgreSQL.c
+b724299c627acebd2fc392a7842b32e2 *src/RS-PostgreSQL.c
 6c0be5883afe2ace76eed7703082a8ca *src/RS-PostgreSQL.h
 474db1c723ed4445734081b5314c017f *src/RS-pgsql-copy.c
 2f9ef8b94157b095a6125f25cfcdd553 *src/RS-pgsql-getResult.c
@@ -81,7 +81,7 @@ d2198b6fb37817b8ecf64b1b356a00c1 *src/libpq/Makefile.win
 428aa319c287a0fadc5f7763ec3609c3 *src/libpq/c.h
 3427f2398ed894335a51bfe33d218221 *src/libpq/chklocale.c
 fd315e609fb8203be4846d1e501f38e7 *src/libpq/common/fe_memutils.h
-64c7bba114ab2c18bfbf7cf10c79cea8 *src/libpq/crypt.c
+cb934c79381798946a89b89d177bc24d *src/libpq/crypt.c
 f3a597bcaefe5910bc73719d786f6d76 *src/libpq/crypt.h
 4c8492fc5017c0a56f1a64658c959490 *src/libpq/encnames.c
 dbe0ec55e4f5ef7777c5cb427c67492d *src/libpq/exports.txt

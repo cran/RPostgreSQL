@@ -19,9 +19,6 @@ AC_INIT([RPostgreSQL],[0.7])
 
 AC_CONFIG_AUX_DIR(src)
 
-# Checks for common programs using default macros
-AC_PROG_CC
-
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
 case "${host_os}" in
@@ -133,7 +130,7 @@ clean:
 
 AC_LANG(C)
  echo '#include <libpq-fe.h>' > conftest.c
- echo 'int main(){printf("%i...",PQlibVersion());return 0;}' >> conftest.c
+ echo 'int main(int,char**);int main(int argc, char**argv){printf("%i...",PQlibVersion());return 0;}' >> conftest.c
 echo $CC $CFLAGS -I${PG_INCDIR} -L${PG_LIBDIR} conftest.c -lpq -o pqconftest
 $CC $CFLAGS -I${PG_INCDIR} -L${PG_LIBDIR} conftest.c -lpq -o pqconftest
 echo ./pqconftest
