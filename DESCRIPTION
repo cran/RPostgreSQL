@@ -1,6 +1,6 @@
 Package: RPostgreSQL
-Version: 0.7-7
-Date: 2024-09-30
+Version: 0.7-8
+Date: 2025-03-28
 Title: R Interface to the 'PostgreSQL' Database System
 Maintainer: Tomoaki Nishiyama <tomoaki@sci.u-toyama.ac.jp>
 Description: Database interface and 'PostgreSQL' driver for 'R'.
@@ -38,11 +38,11 @@ Authors@R: c(person(given = "Joe",
                        family = "Tiffin",
                        role = "aut"))
 NeedsCompilation: yes
-Packaged: 2024-09-30 04:53:23 UTC; tomoaki
+Packaged: 2025-03-28 06:57:36 UTC; tomoaki
 Author: Joe Conway [aut],
   Dirk Eddelbuettel [aut],
   Tomoaki Nishiyama [aut, cre],
   Sameer Kumar Prayaga [aut] (during 2008),
   Neil Tiffin [aut]
 Repository: CRAN
-Date/Publication: 2024-09-30 07:20:07 UTC
+Date/Publication: 2025-03-28 08:00:02 UTC
